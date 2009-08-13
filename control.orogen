@@ -1,0 +1,35 @@
+name "control"
+version "0.1"
+
+using_toolkit "dfki"
+using_toolkit "controldev"
+using_toolkit "hbridge"
+using_library "hbridge"
+
+import_types_from "ControllerTypes.hpp"
+
+task_context "Controller" do
+    input_port("status", "hbridge/Status").
+        doc("Status of all hbridges. A data connection type is recommended")
+
+    input_port('cmd_in', 'controldev/MotionCommand').
+        doc('input command in rotation and translation. Requires a data connection type.')
+
+    output_port("cmd_out", "hbridge/SimpleCommand").
+        doc("output command for the hbridges. A data connection type is recommended")
+end
+
+task_context "SimpleController" do
+    subclasses "Controller"
+end
+
+task_context "VariableSpeedController" do
+    subclasses "Controller"
+end
+
+task_context "TwoPhaseController" do
+    subclasses "Controller"
+    output_port("internal_state", "controller/TwoPhaseState").
+        doc("internal state of the controller")
+end
+
