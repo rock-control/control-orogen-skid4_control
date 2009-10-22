@@ -33,3 +33,13 @@ task_context "TwoPhaseController" do
         doc("internal state of the controller")
 end
 
+task_context "FourWheelController" do
+    input_port("status", "hbridge::Status").
+        doc("Status of all hbridges. A data connection type is recommended")
+
+    input_port('raw_cmd_in', 'controldev::RawCommand').
+        doc('input command in rotation and translation. Requires a data connection type.')
+
+    output_port("cmd_out", "hbridge::SimpleCommand").
+        doc("output command for the hbridges. A data connection type is recommended")
+end
