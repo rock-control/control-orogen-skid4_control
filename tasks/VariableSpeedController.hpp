@@ -1,13 +1,8 @@
-#ifndef CONTROL_VARIABLESPEEDCONTROLLER_TASK_HPP
-#define CONTROL_VARIABLESPEEDCONTROLLER_TASK_HPP
+#ifndef HBRIDGE_SIMPLECONTROLLER_TASK_HPP
+#define HBRIDGE_SIMPLECONTROLLER_TASK_HPP
 
 #include "control/VariableSpeedControllerBase.hpp"
 
-
-namespace RTT
-{
-    class NonPeriodicActivity;
-}
 
 
 namespace control {
@@ -17,11 +12,30 @@ namespace control {
     protected:
     
     
+	bool drive(double translation, double rotation, int duration);
+	bool isdriveCompleted(double translation, double rotation, int duration);
+    
+	int calib_flag , fwd_flag ,n;
+	double last_pos[4],init_pos[4],final_pos[4],mid_pos[4],one_deg[4],fwd_velocity[4],angle[4];
+	int still_motor[4];
+	float test_pwm;
+	double left_tick , right_tick,touchdown[4],v_1[4],time_sync[4],last_touchdown[4];
+	bool last_state[4];
 
     public:
-        VariableSpeedController(std::string const& name = "control::VariableSpeedController", TaskCore::TaskState initial_state = Stopped);
+        VariableSpeedController(std::string const& name = "hbridge::VariableSpeedController", TaskCore::TaskState initial_state = Stopped);
+	
+	double find_speed_1(double p_abs , double v_ground , double period_rem) // period_rem = t_g - t_s . Depends  on (t_g - t_s) and v_ground and p_abs
+	{
+		double p_ground = ceil((p_abs - M_PI/10)/(2*M_PI/5))*2*M_PI/5 + M_PI/10 ;  // As governed by the equations calculated
+		return ((p_ground - v_ground*period_rem/20)/(9*period_rem/20));
+	}
+        
+	double find_speed_2 (double v_1 , double period_rem,double v_ground,double time)
+	{
+		return ( v_1 + (((v_ground - v_1)*(time - (4*period_rem/10)))/M_PI/10) ) ; // As governed by the equations calculated
+	}
 
-        RTT::NonPeriodicActivity* getNonPeriodicActivity();
 
         /** This hook is called by Orocos when the state machine transitions
          * from PreOperational to Stopped. If it returns false, then the
@@ -61,7 +75,7 @@ namespace control {
          * called before starting it again.
          *
          */
-        // void updateHook();
+        void updateHook();
         
 
         /** This hook is called by Orocos when the component is in the
