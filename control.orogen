@@ -9,6 +9,8 @@ using_library "hbridge"
 import_types_from "ControllerTypes.hpp"
 
 task_context "Controller" do
+    abstract
+
     input_port("status", "hbridge/Status").
         doc("Status of all hbridges. A data connection type is recommended")
 
