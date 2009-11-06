@@ -15,7 +15,7 @@ namespace control {
     {
 	friend class FourWheelControllerBase;
     protected:
-    
+      hbridge::SimpleCommand wmcmd;    
     
 
     public:
