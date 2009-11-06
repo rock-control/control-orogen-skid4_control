@@ -2,9 +2,9 @@
 
 #include <rtt/NonPeriodicActivity.hpp>
 
-#define	SLIDER_MAX 252			/*   */
-#define	SLIDER_MIN 3			/*   */
-#define	VEL_MAX_PWM 1.0			/*   */
+#define	SLIDER_MAX 250			/*   */
+#define	SLIDER_MIN 5			/*   */
+#define	VEL_MAX_PWM 0.25			/*   */
 #define	VEL_MAX_PID 7.0			/*   */
 
 #define	SLIDER_MASTER_VEL_LEFT 1			/*   */
