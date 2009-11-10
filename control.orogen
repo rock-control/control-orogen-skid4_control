@@ -23,6 +23,12 @@ task_context "SimpleController" do
     subclasses "Controller"
 end
 
+task_context "PIVController" do
+    subclasses "Controller"
+    input_port('raw_cmd_in', 'controldev::RawCommand').
+        doc('input command in rotation and translation. Requires a data connection type.')
+end
+
 task_context "VariableSpeedController" do
     subclasses "Controller"
 end
