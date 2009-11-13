@@ -158,7 +158,14 @@ void FourWheelController::updateHook()
                                                 * vel_max;
                                 }
                         }
-                } 
+                } else {
+		  //switched off
+		  for(int i = 0; i < 4 ; i++)
+		    {
+		      wmcmd.mode[i] = hbridge::DM_PWM;
+		      wmcmd.target[i] = 0;
+		    }
+		} 
         }
 
 
