@@ -1,0 +1,46 @@
+#! /usr/bin/env ruby
+
+require 'orocos'
+include Orocos
+
+Orocos.initialize
+BASE_DIR=File.expand_path('..', File.dirname(__FILE__))
+ENV['PKG_CONFIG_PATH'] = "#{File.expand_path("..", File.dirname(__FILE__))}/build:#{ENV['PKG_CONFIG_PATH']}"
+STDOUT.sync = true
+
+Asguard.save_logs
+
+Orocos.spawn 'test_pivcontrol' do 
+    
+    can    = Asguard.can
+    puts "'can' configured"
+
+    hbridge, controldev, controller = Asguard.control
+    puts "control loop configured"
+    
+    Orocos.log_all_ports :exclude_types => /can\/Message/
+
+    can.start
+
+    STDERR.puts "starting control ..."
+    controller.start
+    hbridge.start
+    controldev.start
+
+    old_level = nil
+    STDERR.puts "everything is up and running ..."
+    Asguard.survey(0.1) do
+        info = []
+        info << "Running"
+	if !hbridge.running?
+	   STDERR.puts "Hbridge is in error state stopping ..."
+           controller.stop
+           hbridge.stop
+           controldev.stop
+        end
+
+        STDERR.print "\r#{info.join(" ")}"
+    end
+end
+    
+

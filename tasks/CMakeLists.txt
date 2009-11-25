@@ -1,6 +1,9 @@
 include(controlTaskLib)
 ADD_LIBRARY(${CONTROL_TASKLIB_NAME} SHARED 
-    ${CONTROL_TASKLIB_SOURCES})
+    ${CONTROL_TASKLIB_SOURCES}
+    PIV.cpp
+    SimpleIntegrator.cpp
+    RK4_Integrator.cpp)
 
 add_dependencies(${CONTROL_TASKLIB_NAME}
     regen-toolkit)

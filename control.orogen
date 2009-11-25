@@ -46,3 +46,21 @@ task_context "FourWheelController" do
         doc('input command in rotation and translation. Requires a data connection type.')
 end
 
+using_task_library "hbridge"
+using_task_library "can"
+deployment "test_pivcontrol" do
+    can     = task('can', "can::Task").
+        realtime.
+        highest_priority.
+	periodic(0.001)
+    hbridge = task("hbridge", "hbridge::Task").
+    	realtime.
+	highest_priority.
+        triggered
+    piv_controller = task("PIVController", "control::PIVController").
+        realtime.
+        periodic(0.001)
+
+    add_default_logger
+end
+   

@@ -1,114 +1,116 @@
 //
-// C++ Implementation: pivcontroller
+// C++ Implementation: PIV
 //
 // Description:
 //
 //
-// Author:  <>, (C) 2009
+// Author:  <Ajish Babu>, (C) 2009
 //
 // Copyright: See COPYING file that comes with this distribution
 //
 //
 #include "PIV.hpp"
+#include <iostream>
 
 namespace controller
 {
-	PIVController::PIVController()
-	{
-		PIVController( 0,0,0,0,0,0,0,false );
-	}
+    PIVController::PIVController()
+    {
+	PIVController( 0,0,0,1,0,0,0,0,0 );
+    }
 
-	PIVController::PIVController ( double _Kp, double _Ki, double _Kv, double _Ts,
-	                               double _YMin, double _YMax, double _Kt,
-	                               bool _slowPosLoop )
-	{
-		setGains ( _Kp, _Ki,  _Kv );
-		setSamplingTime ( _Ts );
-		setOutputLimits ( _YMin,  _YMax );
-		setIntegratorWindupCoeff ( _Kt );
-		setSlowPosLoop ( _slowPosLoop );
-		bSecondSample = false;
-		limitDiff = 0;
-	}
+    PIVController::PIVController ( 
+	    double _Kpp, double _Kiv, double _Kpv, 
+	    double _Kvff, double _Kalp,
+	    double _Ts,
+	    double _YMin, double _YMax, 
+	    double _Kt)
+    {
+	setGains ( _Kpp, _Kiv,  _Kpv );
+	setVelFeedForwardGain( _Kvff );
+	setVelSmoothingGain( _Kalp );
+	setSamplingTime ( _Ts );
+	setOutputLimits ( _YMin,  _YMax );
+	setIntegratorWindupCoeff ( _Kt );
+	limitDiff = 0.0;
+	velPrevStep = 0.0;
+    }
 
-	PIVController::~PIVController()
-	{
-	}
+    PIVController::~PIVController()
+    {
+    }
 }
 
-void Controller::PIVController::setGains ( double _Kp, double _Ki, double _Kv )
+void controller::PIVController::setGains ( double _Kpp, double _Kiv, double _Kpv )
 {
-	Kp = _Kp;
-	Ki = _Ki;
-	Kv = _Kv;
+    Kpp = _Kpp;
+    Kiv = _Kiv;
+    Kpv = _Kpv;
 }
 
-void Controller::PIVController::setSamplingTime ( double _Ts )
+void controller::PIVController::setVelFeedForwardGain ( double _Kvff )
 {
-	Ts = _Ts;
-	velITerm.init ( Ts );
+    Kvff = _Kvff;
 }
 
-void Controller::PIVController::setOutputLimits ( double _YMin, double _YMax )
+void controller::PIVController::setVelSmoothingGain( double _Kalp )
 {
-	YMin = _YMin;
-	YMax = _YMax;
+    Kalp = _Kalp;
 }
 
-void Controller::PIVController::setIntegratorWindupCoeff ( double _Kt )
+void controller::PIVController::setSamplingTime ( double _Ts )
 {
-	Kt = _Kt;
+    Ts = _Ts;
+    velITerm.init ( Ts );
 }
 
-void Controller::PIVController::setSlowPosLoop ( bool _val )
+void controller::PIVController::setOutputLimits ( double _YMin, double _YMax )
 {
-	bSlowPosLoop = _val;
+    YMin = _YMin;
+    YMax = _YMax;
 }
 
-double Controller::PIVController::saturate ( double _val )
+void controller::PIVController::setIntegratorWindupCoeff ( double _Kt )
 {
-	if ( _val > YMax )
-	{
-		limitDiff = YMax - _val;
-		return YMax;
-	}
-	else if ( _val < YMin )
-	{
-		limitDiff = YMin - _val;
-		return YMin;
-	}
-	else 
-		return _val;
+    Kt = _Kt;
 }
 
-double Controller::PIVController::updateVelLoop ( double _velocity )
+double controller::PIVController::saturate ( double _val )
 {
-	return velCommand = saturate(( Kv * _velocity ) + velITerm.update( Ki*(posCommand - _velocity) + Kt*limitDiff ));
+    if ( _val > YMax )
+    {
+	limitDiff = YMax - _val;
+	return YMax;
+    }
+    else if ( _val < YMin )
+    {
+	limitDiff = YMin - _val;
+	return YMin;
+    }
+    else 
+	return _val;
 }
 
-double Controller::PIVController::updatePosLoop ( double _posError )
+double controller::PIVController::updateVelLoop ( double _velMeasured, double _velCmd )
 {
-	if(bSlowPosLoop)
-	{
-		if(!bSecondSample)	
-		{
-			bSecondSample = true;
-			return posCommand = Kp * (_posError);
-		}
-		else 
-			bSecondSample = false;
-	}
-	else
-		return posCommand = Kp * (_posError);
+    velSmooth = (1-Kalp)*_velMeasured + Kalp*velPrevStep;
+//    std::cout << "\n velSmooth: " << velSmooth;
+    velPrevStep = velSmooth;
+//    std::cout << ",  velPrevStep: " << velPrevStep;
+    velCommand = (Kvff * _velCmd) + posCommand - velSmooth;
+//    std::cout << ",  velControllerInput: " << velCommand;
+    velCommand = saturate((Kpv*velCommand) + velITerm.update(Kiv*velCommand + Kt*limitDiff));
+//    std::cout << ",  Command: " << velCommand;
+    return velCommand;
 }
 
-double Controller::PIVController::update ( double _velocity, double _posError )
+double controller::PIVController::updatePosLoop ( double _posError )
 {
-	updatePosLoop(_posError);
-	updateVelLoop(_velocity);
-	return velCommand;
+    return posCommand = Kpp * (_posError);
 }
 
-
-
-
+double controller::PIVController::update ( double _velMeasured, double _velCmd, double _posError )
+{
+    updatePosLoop(_posError);
+    return updateVelLoop(_velMeasured, _velCmd);
+}

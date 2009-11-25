@@ -29,22 +29,22 @@
  */
 class SimpleIntegrator : public RK4_SIM
 {
-	public:
-		/* ====================  LIFECYCLE     ======================================= */
-		SimpleIntegrator ();
-		SimpleIntegrator (double _sample_time, double _initial_time = 0.0, double _init_val = 0.0);                             /* constructor */
+    public:
+	/* ====================  LIFECYCLE     ======================================= */
+	SimpleIntegrator ();
+	SimpleIntegrator (double _sample_time, double _initial_time = 0.0, double _init_val = 0.0);                             /* constructor */
 
-		/* ====================  MUTATORS      ======================================= */
-		void init(double _sample_time, double _initial_time = 0.0, double _init_val = 0.0);
+	/* ====================  MUTATORS      ======================================= */
+	void init(double _sample_time, double _initial_time = 0.0, double _init_val = 0.0);
 
-		// Overload DERIV function of RK4_SIM for the integrator
-		void DERIV(const double t, const double *x, 
-				const double *u, double *xdot);
+	// Overload DERIV function of RK4_SIM for the integrator
+	void DERIV(const double t, const double *x, 
+		const double *u, double *xdot);
 
-		double update(double derivVal);
-	protected:
+	double update(double derivVal);
+    protected:
 
-	private:
+    private:
 }; /* -----  end of class VelocityPositionEstimator  ----- */
 
 
