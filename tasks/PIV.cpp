@@ -16,24 +16,26 @@ namespace controller
 {
     PIVController::PIVController()
     {
-	PIVController( 0,0,0,1,0,0,0,0,0 );
+	PIVController( 0,0,0,0,0,0,0,0,0,0 );
     }
 
     PIVController::PIVController ( 
 	    double _Kpp, double _Kiv, double _Kpv, 
-	    double _Kvff, double _Kalp,
+	    double _Kvff, double _Kaff,
+	    double _Kalp,
 	    double _Ts,
 	    double _YMin, double _YMax, 
 	    double _Kt)
     {
 	setGains ( _Kpp, _Kiv,  _Kpv );
-	setVelFeedForwardGain( _Kvff );
+	setFeedForwardGain( _Kvff, _Kaff );
 	setVelSmoothingGain( _Kalp );
 	setSamplingTime ( _Ts );
 	setOutputLimits ( _YMin,  _YMax );
 	setIntegratorWindupCoeff ( _Kt );
 	limitDiff = 0.0;
 	velPrevStep = 0.0;
+	setPositionController(true);
     }
 
     PIVController::~PIVController()
@@ -48,34 +50,13 @@ void controller::PIVController::setGains ( double _Kpp, double _Kiv, double _Kpv
     Kpv = _Kpv;
 }
 
-void controller::PIVController::setVelFeedForwardGain ( double _Kvff )
-{
-    Kvff = _Kvff;
-}
-
-void controller::PIVController::setVelSmoothingGain( double _Kalp )
-{
-    Kalp = _Kalp;
-}
-
 void controller::PIVController::setSamplingTime ( double _Ts )
 {
     Ts = _Ts;
     velITerm.init ( Ts );
 }
 
-void controller::PIVController::setOutputLimits ( double _YMin, double _YMax )
-{
-    YMin = _YMin;
-    YMax = _YMax;
-}
-
-void controller::PIVController::setIntegratorWindupCoeff ( double _Kt )
-{
-    Kt = _Kt;
-}
-
-double controller::PIVController::saturate ( double _val )
+double controller::PIVController::saturate_windup ( double _val )
 {
     if ( _val > YMax )
     {
@@ -90,27 +71,31 @@ double controller::PIVController::saturate ( double _val )
     else 
 	return _val;
 }
+double controller::PIVController::saturate ( double _val )
+{
+    if ( _val > YMax )
+	return YMax;
+    else if ( _val < YMin )
+	return YMin;
+    else 
+	return _val;
+}
 
-double controller::PIVController::updateVelLoop ( double _velMeasured, double _velCmd )
+double controller::PIVController::updateVelLoop ( double _velMeasured, double _velCmd, double _accFF )
 {
     velSmooth = (1-Kalp)*_velMeasured + Kalp*velPrevStep;
-//    std::cout << "\n velSmooth: " << velSmooth;
     velPrevStep = velSmooth;
-//    std::cout << ",  velPrevStep: " << velPrevStep;
     velCommand = (Kvff * _velCmd) + posCommand - velSmooth;
-//    std::cout << ",  velControllerInput: " << velCommand;
-    velCommand = saturate((Kpv*velCommand) + velITerm.update(Kiv*velCommand + Kt*limitDiff));
-//    std::cout << ",  Command: " << velCommand;
+    velCommand = saturate_windup((Kpv*velCommand) + velITerm.update(Kiv*velCommand + Kt*limitDiff));
+    velCommand = saturate(velCommand + Kaff * _accFF); 
     return velCommand;
 }
 
-double controller::PIVController::updatePosLoop ( double _posError )
+double controller::PIVController::update ( double _velMeasured, double _velCmd, double _posError, double _accFF )
 {
-    return posCommand = Kpp * (_posError);
-}
-
-double controller::PIVController::update ( double _velMeasured, double _velCmd, double _posError )
-{
-    updatePosLoop(_posError);
-    return updateVelLoop(_velMeasured, _velCmd);
+    if(posController)
+   	 updatePosLoop(_posError);
+    else 
+	 posCommand = 0.0;
+    return updateVelLoop(_velMeasured, _velCmd, _accFF);
 }

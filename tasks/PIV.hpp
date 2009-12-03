@@ -21,26 +21,29 @@ namespace controller
 	public:
 	    PIVController();
 	    PIVController( double _Kpp, double _Kiv, double _Kpv, 
-		    double _Kvff, double _Kalp, 
+		    double _Kvff, double _Kaff,
+		    double _Kalp, 
 		    double _Ts, 
 		    double _YMin = 0, double _YMax = 0, 
 		    double _Kt = 0);
 
 	    ~PIVController();
 
-	    void setGains ( double _Kpp, double _Kiv, double _Kpv ); // Sets the PIIV gains
-	    void setVelFeedForwardGain( double _Kvff );
-	    void setVelSmoothingGain( double _Kalp );
+	    void setGains ( double _Kpp, double _Kiv, double _Kpv ); // Sets the PIV gains
+	    void setFeedForwardGain( double _Kvff=0.0, double _Kaff=0.0 ){ Kvff = _Kvff; Kaff = _Kaff; };
+	    void setVelSmoothingGain( double _Kalp )  { Kalp = _Kalp; };
 	    void setSamplingTime (double _Ts); 
-	    void setOutputLimits ( double _YMin, double _YMax ); // Sets the max and min output limits
-	    void setIntegratorWindupCoeff (double _Kt); // Sets the intergrator wind up coefficients
+	    void setOutputLimits ( double _YMin, double _YMax ){ YMin = _YMin; YMax = _YMax; }; // Sets the max and min output limits
+	    void setPositionController(bool _status) { posController = _status; };
+	    void setIntegratorWindupCoeff (double _Kt) { Kt = _Kt; }; // Sets the intergrator wind up coefficients
 
-	    double saturate(double _value); // Saturates the input based on YMin and YMax returns the excess value
+	    double saturate_windup(double _value); // Saturates the input based on YMin and YMax returns the excess value
+	    double saturate ( double _val );
 
-	    double updateVelLoop ( double _velMeasured, double _velCmd  ); // update velocity loop
-	    double updatePosLoop ( double _posError ); // updates position loop
+	    double updateVelLoop ( double _velMeasured, double _velCmd, double accFF=0.0 ); // update velocity loop
+	    double updatePosLoop ( double _posError ){ return posCommand = Kpp * (_posError); }; // updates position loop
 
-	    double update ( double _velMeasured, double _velCmd, double _posError  ); // updates both the loops
+	    double update ( double _velMeasured, double _velCmd, double _posError=0.0, double _accFF=0.0  ); // updates both the loops
 
 
 	private:
@@ -49,6 +52,7 @@ namespace controller
 	    double Kpv; // Proportional Position loop
 
 	    double Kvff; // Velocity feed forward 
+	    double Kaff; // Acceleration feed forward
 	    double Kalp;  // Smoothing factor for velocity input 0 <= Ka1 < 1    
 
 	    double Kt; // Anti-integrator-windup coefficient
@@ -65,7 +69,7 @@ namespace controller
 	    double posCommand; // output of position loop
 	    double velCommand; // output of velocity loop
 
-
+	    bool posController; // Activate or deactivate position controller
 
 	    SimpleIntegrator velITerm; // Integral term
     };
