@@ -1,5 +1,6 @@
 #include "PIVController.hpp"
 #include <iostream>
+#include <math.h>
 #include <rtt/NonPeriodicActivity.hpp>
 
 
@@ -15,12 +16,13 @@ RTT::NonPeriodicActivity* PIVController::getNonPeriodicActivity()
     refPos = 0;
     refVel = 1.0;
 
-    oPIV.setGains(0.00,0.00,0.20);
-    oPIV.setVelFeedForwardGain(1.00);
-    oPIV.setVelSmoothingGain(0.70);
+    oPIV.setGains(3.80,0.65,0.07);
+    oPIV.setFeedForwardGain(1.00,1.00);
+    oPIV.setVelSmoothingGain(0.6);
     oPIV.setSamplingTime(0.001);
-    oPIV.setOutputLimits(-0.4,0.4);
-    oPIV.setIntegratorWindupCoeff(0.01);
+    oPIV.setOutputLimits(-0.6,0.6);
+    oPIV.setIntegratorWindupCoeff(0.06);
+    oPIV.setPositionController(true);
 
     firstRun = true;
 }
@@ -73,12 +75,16 @@ void PIVController::updateHook()
 
     time = currTime - startTime;
     if(time <= 1.0)
-	refVel = 2.0 * time; 
+	refVel = 2.5 * time; 
     else
 	if (time > 1.0 && time <= 2.0)
-	    refVel = 2.0 - 2.0 * (time-1.0);
+	    refVel = 2.5 - 2.5 * (time-1.0);
 	else
 	    refVel = 0.0;
+
+    refVel = 2.0+0.5*sin(8.0*time);
+//
+//    refVel = 4.0;
 
     actVel = (status.states[0].position - prevPos) / (currTime - prevTime);
 
@@ -90,7 +96,7 @@ void PIVController::updateHook()
     prevTime = currTime;
 //
 //    wmcmd.mode[0] = hbridge::DM_SPEED;
-//    wmcmd.target[0] = 4.0;
+//    wmcmd.target[0] = refVel;
     // Writing out the message
     _cmd_out.write(wmcmd);
 }
@@ -98,9 +104,14 @@ void PIVController::updateHook()
 // void PIVController::errorHook()
 // {
 // }
-// void PIVController::stopHook()
-// {
-// }
+ void PIVController::stopHook()
+ {
+    for (int i=0;i<4;i++)
+    {
+	wmcmd.mode[i] 	= hbridge::DM_PWM;
+	wmcmd.target[i] = 0;
+    }
+ }
 // void PIVController::cleanupHook()
 // {
 // }
