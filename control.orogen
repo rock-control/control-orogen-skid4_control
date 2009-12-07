@@ -27,8 +27,8 @@ end
 
 task_context "PIVController" do
     subclasses "Controller"
-    input_port('raw_cmd_in', 'controldev::RawCommand').
-        doc('input command in rotation and translation. Requires a data connection type.')
+    input_port('four_wheel_cmd', 'controldev::FourWheelCommand').
+        doc('Reference velocity for PIV controller')
 end
 
 task_context "VariableSpeedController" do
