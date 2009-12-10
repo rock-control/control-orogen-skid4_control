@@ -44,8 +44,8 @@ end
 task_context "FourWheelController" do
     subclasses "Controller"
 
-    input_port('raw_cmd_in', 'controldev::RawCommand').
-        doc('input command in rotation and translation. Requires a data connection type.')
+    input_port('four_wheel_cmd', 'controldev::FourWheelCommand').
+        doc('Reference velocity for PIV controller')
 end
 
 using_task_library "hbridge"
