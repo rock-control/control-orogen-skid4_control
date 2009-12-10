@@ -22,13 +22,14 @@ namespace control {
 
 		double refPos[4];
 		double actPos[4], actVel[4];
-		double startTime, prevTime, currTime;
+		int prevIndex, currIndex;
 		double prevPos[4];
 		double errPos[4];
 
 		bool firstRun;
 
 		SimpleIntegrator refVelIntegrator[4];
+                bool validInput(controldev::FourWheelCommand const& refVel) const;
 
 		public:
 		PIVController(std::string const& name = "control::PIVController", TaskCore::TaskState initial_state = Stopped);
