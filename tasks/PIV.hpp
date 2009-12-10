@@ -39,9 +39,10 @@ namespace controller
 
 	    double saturate_windup(double _value); // Saturates the input based on YMin and YMax returns the excess value
 	    double saturate ( double _val );
+            double reset();
 
-	    double updateVelLoop ( double _velMeasured, double _velCmd, double accFF=0.0 ); // update velocity loop
-	    double updatePosLoop ( double _posError ){ return posCommand = Kpp * (_posError); }; // updates position loop
+	    double updateVelLoop ( double _velMeasured, double _velCmd, double _posCmd, double accFF=0.0 ); // update velocity loop
+	    double updatePosLoop ( double _posError ) const { return Kpp * (_posError); }; // updates position loop
 
 	    double update ( double _velMeasured, double _velCmd, double _posError=0.0, double _accFF=0.0  ); // updates both the loops
 
@@ -63,11 +64,7 @@ namespace controller
 	    double YMax; // Maximum output value
 	    double YMin; // Minimum output value
 
-	    double velSmooth; // Filtered velocity
 	    double velPrevStep; // Velocity from previous step for filtering
-
-	    double posCommand; // output of position loop
-	    double velCommand; // output of velocity loop
 
 	    bool posController; // Activate or deactivate position controller
 

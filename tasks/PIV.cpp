@@ -16,7 +16,15 @@ namespace controller
 {
     PIVController::PIVController()
     {
-	PIVController( 0,0,0,0,0,0,0,0,0,0 );
+	setGains ( 0, 0, 0 );
+	setFeedForwardGain(0, 0);
+	setVelSmoothingGain( 0 );
+	setSamplingTime ( 0 );
+	setOutputLimits ( 0, 0 );
+	setIntegratorWindupCoeff ( 0 );
+	limitDiff = 0.0;
+	velPrevStep = 0.0;
+	setPositionController(true);
     }
 
     PIVController::PIVController ( 
@@ -81,11 +89,12 @@ double controller::PIVController::saturate ( double _val )
 	return _val;
 }
 
-double controller::PIVController::updateVelLoop ( double _velMeasured, double _velCmd, double _accFF )
+double controller::PIVController::updateVelLoop ( double _velMeasured, double _velCmd, double _posCommand, double _accFF )
 {
+    double velSmooth, velCommand;
     velSmooth = (1-Kalp)*_velMeasured + Kalp*velPrevStep;
     velPrevStep = velSmooth;
-    velCommand = (Kvff * _velCmd) + posCommand - velSmooth;
+    velCommand = (Kvff * _velCmd) + _posCommand - velSmooth;
     velCommand = saturate_windup((Kpv*velCommand) + velITerm.update(Kiv*velCommand + Kt*limitDiff));
     velCommand = saturate(velCommand + Kaff * _accFF); 
     return velCommand;
@@ -93,9 +102,15 @@ double controller::PIVController::updateVelLoop ( double _velMeasured, double _v
 
 double controller::PIVController::update ( double _velMeasured, double _velCmd, double _posError, double _accFF )
 {
+    double posCommand = 0.0;
     if(posController)
-   	 updatePosLoop(_posError);
-    else 
-	 posCommand = 0.0;
-    return updateVelLoop(_velMeasured, _velCmd, _accFF);
+   	 posCommand = updatePosLoop(_posError);
+    return updateVelLoop(_velMeasured, _velCmd, posCommand, _accFF);
+}
+
+
+double controller::PIVController::reset()
+{
+    velPrevStep = 0.0;
+    velITerm.init(Ts);
 }
