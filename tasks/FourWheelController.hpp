@@ -43,7 +43,7 @@ namespace control {
          * stay in Stopped. Otherwise, it goes into Running and updateHook()
          * will be called.
          */
-        // bool startHook();
+        bool startHook();
 
         /** This hook is called by Orocos when the component is in the Running
          * state, at each activity step. Here, the activity gives the "ticks"
@@ -75,7 +75,7 @@ namespace control {
         /** This hook is called by Orocos when the state machine transitions
          * from Running to Stopped after stop() has been called.
          */
-        // void stopHook();
+        void stopHook();
 
         /** This hook is called by Orocos when the state machine transitions
          * from Stopped to PreOperational, requiring the call to configureHook()
