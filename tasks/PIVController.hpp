@@ -18,18 +18,30 @@ namespace control {
 		protected:
 		controldev::FourWheelCommand refVel;
 		hbridge::SimpleCommand wmcmd;
+		
+		
+	  	// Data members for Controlling	
 		controller::PIVController oPIV[4];
-
 		double refPos[4];
 		double actPos[4], actVel[4];
 		int prevIndex, currIndex;
 		double prevPos[4];
 		double errPos[4];
-
 		bool firstRun;
+		bool stopSync;
+		SimpleIntegrator refVelIntegrator[4];	
 
-		SimpleIntegrator refVelIntegrator[4];
+		// Data members for calibration
+		bool calibrated;
+		bool forward;
+		double last_pos[4],init_pos[4],final_pos[4],mid_pos[4];
+		int still_motor[4];
+	
+
+		// Functions	
                 bool validInput(controldev::FourWheelCommand const& refVel) const;
+		bool calibrate(hbridge::Status status);
+		void setSyncRefPos();
 
 		public:
 		PIVController(std::string const& name = "control::PIVController", TaskCore::TaskState initial_state = Stopped);
