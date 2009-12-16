@@ -28,7 +28,8 @@ namespace control {
 		double prevPos[4];
 		double errPos[4];
 		bool firstRun;
-		bool stopSync;
+		bool sync_prev;
+                bool calib;
 		SimpleIntegrator refVelIntegrator[4];	
 
 		// Data members for calibration
@@ -41,7 +42,7 @@ namespace control {
 		// Functions	
                 bool validInput(controldev::FourWheelCommand const& refVel) const;
 		bool calibrate(hbridge::Status status);
-		void setSyncRefPos();
+		void setSyncRefPos(hbridge::Status status);
 
 		public:
 		PIVController(std::string const& name = "control::PIVController", TaskCore::TaskState initial_state = Stopped);

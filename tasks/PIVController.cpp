@@ -4,10 +4,16 @@
 #include <rtt/NonPeriodicActivity.hpp>
 
 #define SAMPLING_TIME 0.001
-#define FL 0  // Front Left
-#define FR 1  // Front Right
-#define RL 2  // Rear Left
-#define RR 3  // Rear Right
+
+
+// already defines in drivers/hbridge/HBridge.hpp
+#define FL 3  // Front Left
+#define FR 2  // Front Right
+#define RL 0  // Rear Left
+#define RR 1  // Rear Right
+
+#define MASTER FL // setting the master wheel
+
 #define _2PI_5 1.2566370614 // Angle between wheel legs
 #define _PI_5 0.6283185307  // Half of angle between wheel legs
 
@@ -20,13 +26,6 @@ RTT::NonPeriodicActivity* PIVController::getNonPeriodicActivity()
     PIVController::PIVController(std::string const& name, TaskCore::TaskState initial_state)
 : PIVControllerBase(name, initial_state)
 {
-    forward = true;;
-    calibrated = false;
-    for (int i = 0; i < 4; ++i)
-    {
-	still_motor[i] = 0;			//Initializing all the variables
-	last_pos[i] = 0;
-    }
 }
 
 
@@ -57,7 +56,14 @@ bool PIVController::startHook()
 	wmcmd.target[i] = 0;
     }
     firstRun = true;
-    stopSync = true;
+    sync_prev = false;
+    forward = true;
+    calibrated = false;
+    for (int i = 0; i < 4; ++i)
+    {
+	still_motor[i] = 0;			//Initializing all the variables
+	last_pos[i] = 0;
+    }
 
     _status.clear();
     _four_wheel_cmd.clear();
@@ -83,16 +89,31 @@ void PIVController::updateHook()
     if (! _status.read(status))
     {
 	return;
-    }   
+    }  
 
-    if(!calibrated) // Calibrate if not already done
-	if(!calibrate(status)) // If still not calibrated exit the function
+     _four_wheel_cmd.read (refVel);
+
+    if(sync_prev != refVel.sync)
+        firstRun = true;
+
+    sync_prev = refVel.sync;
+
+    if(!calibrated && refVel.sync) // Calibrate if not already done
+    {
+/*	if(!calibrate(status)) // If still not calibrated exit the function
 	{
 	    _cmd_out.write(wmcmd);
 	    return;
 	}
-
-    _four_wheel_cmd.read (refVel);
+        else
+        {
+            firstRun = true; 
+        }*/
+        for(int i=0;i<4;i++)
+            mid_pos[i] = status.states[i].position;
+        calibrated = true;
+        firstRun = true;
+    }
 
     // Validate the input. If it is not valid, stop the wheels
     if (! validInput(refVel))
@@ -111,45 +132,34 @@ void PIVController::updateHook()
     currIndex = status.index;
     if(firstRun)
     {
+        if(refVel.sync)
+            setSyncRefPos(status);
+
 	firstRun = false;
 	prevIndex  = currIndex;
 	for(int i=0; i<4; i++)
 	{
-	    prevPos[i]  = status.states[i].position;
-	    refVelIntegrator[i].init(SAMPLING_TIME,0.0,prevPos[i]);
+            prevPos[i]  = status.states[i].position;
+            if(refVel.sync)
+                refVelIntegrator[i].init(SAMPLING_TIME,0.0,refPos[i]);
+            else
+                refVelIntegrator[i].init(SAMPLING_TIME,0.0,prevPos[i]);
 	    oPIV[i].reset();
 	    wmcmd.mode[i] 	= hbridge::DM_PWM;
 	}
 	return;
     }
 
+    if(refVel.sync)
+    {
+        for(int i=0;i<4;i++)
+            refVel.target[i] = refVel.target[MASTER];
+    }
+
     for(int i=0; i<4; i++)
     {
 	actVel[i] = (status.states[i].position - prevPos[i]) / ((currIndex - prevIndex) * 0.001);
-	if(refVel.sync)
-	{
-	    refVel.target[FR] = refVel.target[FL];
-	    refVel.target[RR] = refVel.target[FL];
-	    refVel.target[RL] = refVel.target[FL];
-	    // Generate synchronized refPos[] 
-	    setSyncRefPos();
-	    stopSync = false;
-	}
-	else 
-	{
-	    if(!stopSync)
-	    {
-		// restart velIntegrator
-		for(int i=0; i<4; i++)
-		{
-		    prevPos[i]  = status.states[i].position;
-		    refVelIntegrator[i].init(SAMPLING_TIME,0.0,prevPos[i]);
-		}
-		stopSync = true;
-		return;
-	    }
-	    refPos[i] = refVelIntegrator[i].update(refVel.target[i]);
-	}
+        refPos[i] = refVelIntegrator[i].update(refVel.target[i]);
 	errPos[i] = refPos[i] - status.states[i].position;
 	wmcmd.target[i] = oPIV[i].update(actVel[i], refVel.target[i], errPos[i]);
 	prevPos[i]  = status.states[i].position;
@@ -177,7 +187,7 @@ void PIVController::stopHook()
 
 bool PIVController::calibrate(hbridge::Status status)
 {
-    std::cout<<"Entered Calibration "<<std::endl;
+//    std::cout<<"Entered Calibration "<<std::endl;
     bool reached_maximum = true;
 
     for (int i = 0; i < 4; i++)
@@ -206,7 +216,7 @@ bool PIVController::calibrate(hbridge::Status status)
     {
 	if (forward)
 	{	
-	    std::cout << "Forward Calibration Over" << std::endl;
+	  //  std::cout << "Forward Calibration Over" << std::endl;
 	    for(int i=0;i<4;i++)	
 	    {
 		init_pos[i] = status.states[i].position; // store initial calibration data
@@ -214,7 +224,7 @@ bool PIVController::calibrate(hbridge::Status status)
 	    }
 	    forward = false;
 	    reached_maximum = false;
-	    std::cout << "Maximum Reset ";
+	    //std::cout << "Maximum Reset ";
 	}
 	else
 	{	
@@ -224,48 +234,39 @@ bool PIVController::calibrate(hbridge::Status status)
 	    for(int i =0;i<4;++i)
 	    {
 		mid_pos[i] = (init_pos[i] + final_pos[i])/2;    // Mid position  for each wheel
-		std::cout<<std::endl<<i<<". initial position = " <<init_pos[i]<< "     Final Position  = "<< final_pos[i] << "   Middle position = "<<mid_pos[i];
+	//	std::cout<<std::endl<<i<<". initial position = " <<init_pos[i]<< "     Final Position  = "<< final_pos[i] << "   Middle position = "<<mid_pos[i];
 	    }	
 
 	    calibrated = true;
-	    std::cout<<std::endl<<"Calibration Done"<<std::endl;
+	  //  std::cout<<std::endl<<"Calibration Done"<<std::endl;
 	}
     }
     return calibrated;
 }
 
 
-void PIVController::setSyncRefPos()
+void PIVController::setSyncRefPos(hbridge::Status status)
 {
-    refPos[FL] = refVelIntegrator[FL].update(refVel.target[FL]);
-    
     double del[4];  // Stores the delta position
     int mul[4];  // Stores the integer multiples of 2PI/5
 
-    del[FL] = refPos[FL] - mid_pos[FL];	
-    del[FR] = refPos[FR] - mid_pos[FR];
-    del[RL] = refPos[RL] - mid_pos[RL];
-    del[RR] = refPos[RR] - mid_pos[RR];
+    for(int i=0;i<4;i++)
+    {
+        refPos[i] = status.states[i].position;
+        del[i] = refPos[i] - mid_pos[i];	
+        mul[i] = (int) del[i] / _2PI_5;
+        del[i] -=  mul[i] * _2PI_5;
+    }
 
-    mul[FL] = (int) del[FL] / _2PI_5;
-    mul[FR] = (int) del[FR] / _2PI_5;
-    mul[RL] = (int) del[RL] / _2PI_5;
-    mul[RR] = (int) del[RR] / _2PI_5;
-
-    del[FL] -=  mul[FL] * _2PI_5;
-    del[FR] -=  mul[FR] * _2PI_5;
-    del[RL] -=  mul[RL] * _2PI_5;
-    del[RR] -=  mul[RR] * _2PI_5;
-
-    if(fabs(del[FR]) >= fabs(del[FL]))
-	    refPos[FR] = mid_pos[FR] + mul[FR] * _2PI_5 + del[FL]  - _PI_5;
+    if(fabs(del[FR]) >= fabs(del[MASTER]))
+	    refPos[FR] = mid_pos[FR] + mul[FR] * _2PI_5 + del[MASTER]  + _PI_5;
     else
-	    refPos[FR] = mid_pos[FR] + mul[FR] * _2PI_5 + del[FL]  + _PI_5;
+	    refPos[FR] = mid_pos[FR] + mul[FR] * _2PI_5 + del[MASTER]  - _PI_5;
 
-    if(fabs(del[RL]) >= fabs(del[FL]))
-	    refPos[RL] = mid_pos[RL] + mul[RL] * _2PI_5 + del[FL]  - _PI_5;
+    if(fabs(del[RL]) >= fabs(del[MASTER]))
+	    refPos[RL] = mid_pos[RL] + mul[RL] * _2PI_5 + del[MASTER]  + _PI_5;
     else
-	    refPos[RL] = mid_pos[RL] + mul[RL] * _2PI_5 + del[FL]  + _PI_5;
+	    refPos[RL] = mid_pos[RL] + mul[RL] * _2PI_5 + del[MASTER]  - _PI_5;
 
-    refPos[RR] = mid_pos[RR] + mul[RR] * _2PI_5 + del[FL];
+    refPos[RR] = mid_pos[RR] + mul[RR] * _2PI_5 + del[MASTER];
 }
