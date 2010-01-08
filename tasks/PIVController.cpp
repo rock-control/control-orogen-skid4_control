@@ -128,7 +128,7 @@ void PIVController::updateHook()
 	return;
     }
 
-    wmcmd.stamp	= DFKI::Time::now();
+    wmcmd.time	= base::Time::now();
     currIndex = status.index;
     if(firstRun)
     {

@@ -1,7 +1,7 @@
 name "control"
 version "0.1"
 
-using_toolkit "dfki"
+using_toolkit "base"
 using_toolkit "controldev"
 using_toolkit "hbridge"
 using_library "hbridge"
