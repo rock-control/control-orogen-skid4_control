@@ -37,10 +37,10 @@ void FourWheelController::updateHook()
 {
         controldev::FourWheelCommand oInputCmd;
         float sliderValues[7];
-        if (!_four_wheel_cmd.read(oInputCmd))
+        if (!_four_wheel_command.read(oInputCmd))
         {
             // No data on input, send last command on output
-            _cmd_out.write(wmcmd);
+            _simple_command.write(wmcmd);
             return;
         }
 
@@ -56,7 +56,7 @@ void FourWheelController::updateHook()
             wmcmd.target[i] = oInputCmd.target[i];
         }
 
-	_cmd_out.write(wmcmd);
+	_simple_command.write(wmcmd);
 }
 
 // void FourWheelController::errorHook()
@@ -69,7 +69,7 @@ void FourWheelController::stopHook()
         wmcmd.mode[i] = hbridge::DM_PWM;
         wmcmd.target[i] = 0;
     }
-    _cmd_out.write(wmcmd);
+    _simple_command.write(wmcmd);
 }
 // void FourWheelController::cleanupHook()
 // {

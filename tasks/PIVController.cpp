@@ -66,7 +66,7 @@ bool PIVController::startHook()
     }
 
     _status.clear();
-    _four_wheel_cmd.clear();
+    _four_wheel_command.clear();
     return true;
 }
 
@@ -91,7 +91,7 @@ void PIVController::updateHook()
 	return;
     }  
 
-     _four_wheel_cmd.read (refVel);
+     _four_wheel_command.read (refVel);
 
     if(sync_prev != refVel.sync)
         firstRun = true;
@@ -102,7 +102,7 @@ void PIVController::updateHook()
     {
 /*	if(!calibrate(status)) // If still not calibrated exit the function
 	{
-	    _cmd_out.write(wmcmd);
+	    _simple_command.write(wmcmd);
 	    return;
 	}
         else
@@ -124,7 +124,7 @@ void PIVController::updateHook()
 	    wmcmd.target[i] = 0;
 	}
 	firstRun = true;
-	_cmd_out.write(wmcmd);
+	_simple_command.write(wmcmd);
 	return;
     }
 
@@ -167,7 +167,7 @@ void PIVController::updateHook()
     prevIndex = currIndex;
 
     // Writing out the message
-    _cmd_out.write(wmcmd);
+    _simple_command.write(wmcmd);
 }
 
 // void PIVController::errorHook()

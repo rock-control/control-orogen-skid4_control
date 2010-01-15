@@ -14,10 +14,10 @@ task_context "Controller" do
     input_port("status", "hbridge/Status").
         doc("Status of all hbridges. A data connection type is recommended")
 
-    input_port('cmd_in', 'controldev/MotionCommand').
+    input_port('motion_command', 'controldev/MotionCommand').
         doc('input command in rotation and translation. Requires a data connection type.')
 
-    output_port("cmd_out", "hbridge/SimpleCommand").
+    output_port("simple_command", "hbridge/SimpleCommand").
         doc("output command for the hbridges. A data connection type is recommended")
 end
 
@@ -27,7 +27,7 @@ end
 
 task_context "PIVController" do
     subclasses "Controller"
-    input_port('four_wheel_cmd', 'controldev::FourWheelCommand').
+    input_port('four_wheel_command', 'controldev::FourWheelCommand').
         doc('Reference velocity for PIV controller')
 end
 
@@ -44,7 +44,7 @@ end
 task_context "FourWheelController" do
     subclasses "Controller"
 
-    input_port('four_wheel_cmd', 'controldev::FourWheelCommand').
+    input_port('four_wheel_command', 'controldev::FourWheelCommand').
         doc('Reference velocity for PIV controller')
 end
 

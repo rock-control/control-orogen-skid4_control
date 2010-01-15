@@ -59,7 +59,7 @@ void VariableSpeedController::updateHook()
 {
     // This is the user's command
     controldev::MotionCommand cmd_in;
-    if (! _cmd_in.read(cmd_in))
+    if (! _motion_command.read(cmd_in))
     {
         cmd_in.translation = 0;
         cmd_in.rotation    = 0;
@@ -107,7 +107,7 @@ void VariableSpeedController::updateHook()
             else
                 cmd_out.target[i] = 0;			
         }
-        _cmd_out.write(cmd_out);	
+        _simple_command.write(cmd_out);	
 
 
 
@@ -176,7 +176,7 @@ void VariableSpeedController::updateHook()
 	cmd_out.target[1]  = mid_pos[1] + M_PI/5 ;
 	cmd_out.target[2]  = mid_pos[2] ;
 	cmd_out.target[3]  = mid_pos[3] + M_PI/5;
-        _cmd_out.write(cmd_out);	
+        _simple_command.write(cmd_out);	
 
     }		
 }

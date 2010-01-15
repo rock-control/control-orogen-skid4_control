@@ -63,7 +63,7 @@ void TwoPhaseController::updateHook()
 {
     // This is the user's command
     controldev::MotionCommand cmd_in;
-    if (! _cmd_in.read(cmd_in))
+    if (! _motion_command.read(cmd_in))
     {
         cmd_in.translation = 0;
         cmd_in.rotation    = 0;
@@ -117,7 +117,7 @@ void TwoPhaseController::updateHook()
             else
                 cmd_out.target[i] = 0;			
         }
-        _cmd_out.write(cmd_out);	
+        _simple_command.write(cmd_out);	
         _internal_state.write(state);
 
 
@@ -273,7 +273,7 @@ void TwoPhaseController::updateHook()
 		}
 	}
 	_internal_state.write(state);
-	_cmd_out.write(cmd_out);	
+	_simple_command.write(cmd_out);	
 
 
     }		

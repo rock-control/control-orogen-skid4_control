@@ -17,7 +17,7 @@ void SimpleController::updateHook()
 {
     // This is the user's command
     controldev::MotionCommand cmd_in;
-    if (! _cmd_in.read(cmd_in))
+    if (! _motion_command.read(cmd_in))
     {
         cmd_in.translation = 0;
         cmd_in.rotation    = 0;
@@ -48,7 +48,7 @@ void SimpleController::updateHook()
     cmd_out.target[hbridge::MOTOR_FRONT_RIGHT] = fwd_velocity + differential;
     cmd_out.target[hbridge::MOTOR_REAR_RIGHT]  = fwd_velocity + differential;
 
-    _cmd_out.write(cmd_out);
+    _simple_command.write(cmd_out);
 }
 
 // void SimpleController::errorHook()
