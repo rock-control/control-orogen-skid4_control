@@ -100,7 +100,7 @@ void PIVController::updateHook()
 
     if(!calibrated && refVel.sync) // Calibrate if not already done
     {
-/*	if(!calibrate(status)) // If still not calibrated exit the function
+	if(!calibrate(status)) // If still not calibrated exit the function
 	{
 	    _simple_command.write(wmcmd);
 	    return;
@@ -108,9 +108,9 @@ void PIVController::updateHook()
         else
         {
             firstRun = true; 
-        }*/
-        for(int i=0;i<4;i++)
-            mid_pos[i] = status.states[i].position;
+        }
+        /*for(int i=0;i<4;i++)
+            mid_pos[i] = status.states[i].position;*/
         calibrated = true;
         firstRun = true;
     }
