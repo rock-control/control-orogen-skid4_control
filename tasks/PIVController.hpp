@@ -3,6 +3,7 @@
 
 #include "control/PIVControllerBase.hpp"
 #include "PIV.hpp"
+#include "ramp.h"
 #include "SimpleIntegrator.hpp"
 
 namespace RTT
@@ -18,7 +19,8 @@ namespace control {
 		protected:
 		controldev::FourWheelCommand refVel;
 		hbridge::SimpleCommand wmcmd;
-		
+    		controldev::MotionCommand mcmd;
+		Ramp oRamp;
 		
 	  	// Data members for Controlling	
 		controller::PIVController oPIV[4];
@@ -43,6 +45,7 @@ namespace control {
                 bool validInput(controldev::FourWheelCommand const& refVel) const;
 		bool calibrate(hbridge::Status status);
 		void setSyncRefPos(hbridge::Status status);
+		void motionToFourWheelCmd();
 
 		public:
 		PIVController(std::string const& name = "control::PIVController", TaskCore::TaskState initial_state = Stopped);

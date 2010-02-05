@@ -1,6 +1,7 @@
 #include "PIVController.hpp"
 #include <iostream>
 #include <math.h>
+#include "../Robot.hpp"
 #include <rtt/NonPeriodicActivity.hpp>
 
 #define SAMPLING_TIME 0.001
@@ -50,6 +51,11 @@ bool PIVController::startHook()
 	oPIV[i].setPositionController(true);
     }
 
+    oRamp.setInitialData(0.0);
+    oRamp.setFinalData(3.80);
+    oRamp.setDeltaTime(5000.0); // 5 sec
+    oRamp.setType(0);  // Linear
+
     for (int i=0;i<4;i++)
     {
 	wmcmd.mode[i] 	= hbridge::DM_PWM;
@@ -82,6 +88,27 @@ bool PIVController::validInput(controldev::FourWheelCommand const& refVel) const
     return true;
 }
 
+// Converts motion command to four wheel command
+void PIVController::motionToFourWheelCmd()
+{
+    // The output of this controller is a speed command.
+    refVel.mode[0] = refVel.mode[1] =
+        refVel.mode[2] = refVel.mode[3] = controldev::MODE_SPEED;
+
+    double fwd_velocity = mcmd.translation / robot::WHEEL_RADIUS;
+    double differential = mcmd.rotation * robot::ROTATION_RADIUS / robot::WHEEL_RADIUS;
+    refVel.target[hbridge::MOTOR_FRONT_LEFT]  = fwd_velocity - differential;
+    refVel.target[hbridge::MOTOR_REAR_LEFT]   = fwd_velocity - differential;
+    refVel.target[hbridge::MOTOR_FRONT_RIGHT] = fwd_velocity + differential;
+    refVel.target[hbridge::MOTOR_REAR_RIGHT]  = fwd_velocity + differential;
+
+    // Check if the robot is going straight
+    if(mcmd.rotation >= -0.1 && mcmd.rotation <= 0.1)
+	refVel.sync = true;
+    else
+	refVel.sync = false;
+}
+
 void PIVController::updateHook()
 {
     // This is the hbridge status
@@ -91,10 +118,19 @@ void PIVController::updateHook()
 	return;
     }  
 
-     _four_wheel_command.read (refVel);
+    if(_four_wheel_command.connected())
+	_four_wheel_command.read (refVel);
+    else
+    {
+        _motion_command.read(mcmd);
+	motionToFourWheelCmd();
+    }
 
     if(sync_prev != refVel.sync)
+    {
+	oRamp.reset();
         firstRun = true;
+    }
 
     sync_prev = refVel.sync;
 
@@ -157,7 +193,8 @@ void PIVController::updateHook()
     }
 
     for(int i=0; i<4; i++)
-    {
+    {	
+	oPIV[i].setGains(oRamp.getVal(currIndex),0.65,0.07);
 	actVel[i] = (status.states[i].position - prevPos[i]) / ((currIndex - prevIndex) * 0.001);
         refPos[i] = refVelIntegrator[i].update(refVel.target[i]);
 	errPos[i] = refPos[i] - status.states[i].position;
@@ -270,3 +307,4 @@ void PIVController::setSyncRefPos(hbridge::Status status)
 
     refPos[RR] = mid_pos[RR] + mul[RR] * _2PI_5 + del[MASTER];
 }
+
