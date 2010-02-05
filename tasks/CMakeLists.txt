@@ -3,7 +3,8 @@ ADD_LIBRARY(${CONTROL_TASKLIB_NAME} SHARED
     ${CONTROL_TASKLIB_SOURCES}
     PIV.cpp
     SimpleIntegrator.cpp
-    RK4_Integrator.cpp)
+    RK4_Integrator.cpp
+    ramp.cpp)
 
 add_dependencies(${CONTROL_TASKLIB_NAME}
     regen-toolkit)
@@ -19,6 +20,6 @@ INSTALL(TARGETS ${CONTROL_TASKLIB_NAME}
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib/orocos)
 
-INSTALL(FILES ${CONTROL_TASKLIB_HEADERS} PIV.hpp SimpleIntegrator.hpp RK4_Integrator.hpp
+INSTALL(FILES ${CONTROL_TASKLIB_HEADERS} PIV.hpp SimpleIntegrator.hpp RK4_Integrator.hpp ramp.h
     DESTINATION include/orocos/control)
 
