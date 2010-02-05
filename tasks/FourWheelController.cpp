@@ -36,7 +36,6 @@ bool FourWheelController::startHook()
 void FourWheelController::updateHook()
 {
         controldev::FourWheelCommand oInputCmd;
-        float sliderValues[7];
         if (!_four_wheel_command.read(oInputCmd))
         {
             // No data on input, send last command on output
