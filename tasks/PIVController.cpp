@@ -53,7 +53,7 @@ bool PIVController::startHook()
 
     oRamp.setInitialData(0.0);
     oRamp.setFinalData(3.80);
-    oRamp.setDeltaTime(5000.0); // 5 sec
+    oRamp.setDeltaTime(10000.0); // 5 sec
     oRamp.setType(0);  // Linear
 
     for (int i=0;i<4;i++)
@@ -102,8 +102,14 @@ void PIVController::motionToFourWheelCmd()
     refVel.target[hbridge::MOTOR_FRONT_RIGHT] = fwd_velocity + differential;
     refVel.target[hbridge::MOTOR_REAR_RIGHT]  = fwd_velocity + differential;
 
+    for(int i=0; i<4; i++)
+        if (refVel.target[i] > 7.0)
+                refVel.target[i] = 7.0;
+        else  if (refVel.target[i] < -7.0)
+                refVel.target[i] = -7.0;
+    //std::cout << mcmd.rotation << "    " << mcmd.translation  << std::endl;
     // Check if the robot is going straight
-    if(mcmd.rotation >= -0.1 && mcmd.rotation <= 0.1)
+    if(mcmd.rotation >= -0.01 && mcmd.rotation <= 0.01 && (mcmd.translation <= -0.05 || mcmd.translation >= 0.05) )
 	refVel.sync = true;
     else
 	refVel.sync = false;
@@ -128,7 +134,8 @@ void PIVController::updateHook()
 
     if(sync_prev != refVel.sync)
     {
-	oRamp.reset();
+    //    if(refVel.sync == true)
+	    oRamp.reset();
         firstRun = true;
     }
 
@@ -136,7 +143,7 @@ void PIVController::updateHook()
 
     if(!calibrated && refVel.sync) // Calibrate if not already done
     {
-	if(!calibrate(status)) // If still not calibrated exit the function
+	/*if(!calibrate(status)) // If still not calibrated exit the function
 	{
 	    _simple_command.write(wmcmd);
 	    return;
@@ -144,9 +151,9 @@ void PIVController::updateHook()
         else
         {
             firstRun = true; 
-        }
-        /*for(int i=0;i<4;i++)
-            mid_pos[i] = status.states[i].position;*/
+        }*/
+        for(int i=0;i<4;i++)
+            mid_pos[i] = status.states[i].position;
         calibrated = true;
         firstRun = true;
     }
@@ -192,6 +199,7 @@ void PIVController::updateHook()
             refVel.target[i] = refVel.target[MASTER];
     }
 
+    //std::cout <<   oRamp.getVal(currIndex) << std::endl;
     for(int i=0; i<4; i++)
     {	
 	oPIV[i].setGains(oRamp.getVal(currIndex),0.65,0.07);
@@ -224,18 +232,16 @@ void PIVController::stopHook()
 
 bool PIVController::calibrate(hbridge::Status status)
 {
-//    std::cout<<"Entered Calibration "<<std::endl;
     bool reached_maximum = true;
-
     for (int i = 0; i < 4; i++)
     {
 	wmcmd.mode[i] = hbridge::DM_PWM;
 	if (still_motor[i] < 300)
 	{
 	    if(forward)			// doing calibration in the forward direction
-		wmcmd.target[i] = 0.1; //Slow PWM in the forward direction         		
+		wmcmd.target[i] = 0.12; //Slow PWM in the forward direction         		
 	    else
-		wmcmd.target[i] = -0.1; //Slow PWM in the reverse direction         		
+		wmcmd.target[i] = -0.12; //Slow PWM in the reverse direction         		
 
 	    if (fabs(last_pos[i] - status.states[i].position) < 0.001)
 		still_motor[i]++;
@@ -253,7 +259,6 @@ bool PIVController::calibrate(hbridge::Status status)
     {
 	if (forward)
 	{	
-	  //  std::cout << "Forward Calibration Over" << std::endl;
 	    for(int i=0;i<4;i++)	
 	    {
 		init_pos[i] = status.states[i].position; // store initial calibration data
@@ -261,7 +266,6 @@ bool PIVController::calibrate(hbridge::Status status)
 	    }
 	    forward = false;
 	    reached_maximum = false;
-	    //std::cout << "Maximum Reset ";
 	}
 	else
 	{	
@@ -269,13 +273,9 @@ bool PIVController::calibrate(hbridge::Status status)
 		final_pos[i]= status.states[i].position;// store final calibration data
 
 	    for(int i =0;i<4;++i)
-	    {
 		mid_pos[i] = (init_pos[i] + final_pos[i])/2;    // Mid position  for each wheel
-	//	std::cout<<std::endl<<i<<". initial position = " <<init_pos[i]<< "     Final Position  = "<< final_pos[i] << "   Middle position = "<<mid_pos[i];
-	    }	
 
 	    calibrated = true;
-	  //  std::cout<<std::endl<<"Calibration Done"<<std::endl;
 	}
     }
     return calibrated;
