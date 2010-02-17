@@ -3,7 +3,7 @@
 
 #include "control/PIVControllerBase.hpp"
 #include "PIV.hpp"
-#include "ramp.h"
+#include "Ramp.hpp"
 #include "SimpleIntegrator.hpp"
 
 namespace RTT
@@ -20,10 +20,10 @@ namespace control {
 		controldev::FourWheelCommand refVel;
 		hbridge::SimpleCommand wmcmd;
     		controldev::MotionCommand mcmd;
-		Ramp oRamp;
+		motor_controller::Ramp oRamp;
 		
 	  	// Data members for Controlling	
-		controller::PIVController oPIV[4];
+		motor_controller::PIV oPIV[4];
 		double refPos[4];
 		double actPos[4], actVel[4];
 		int prevIndex, currIndex;
