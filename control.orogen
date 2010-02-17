@@ -37,25 +37,6 @@ task_context "PIVController" do
         doc('Reference velocity for PIV controller')
 end
 
-task_context "VariableSpeedController" do
-    subclasses "Controller"
-
-    input_port('motion_command', 'controldev/MotionCommand').
-        doc('input command in rotation and translation. Requires a data connection type.').
-        needs_data_connection
-end
-
-task_context "TwoPhaseController" do
-    subclasses "Controller"
-
-    output_port("internal_state", "controller/TwoPhaseState").
-        doc("internal state of the controller")
-
-    input_port('motion_command', 'controldev/MotionCommand').
-        doc('input command in rotation and translation. Requires a data connection type.').
-        needs_data_connection
-end
-
 task_context "FourWheelController" do
     subclasses "Controller"
 
