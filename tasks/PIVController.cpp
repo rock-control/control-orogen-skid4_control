@@ -2,19 +2,10 @@
 #include <iostream>
 #include <math.h>
 
-#include <HBridge.hpp>
+//#include <HBridge.hpp>
 #include <rtt/NonPeriodicActivity.hpp>
 
 #define SAMPLING_TIME 0.001
-
-
-// already defines in drivers/hbridge/HBridge.hpp
-#define FL MOTOR_FRONT_LEFT // Front Left
-#define FR MOTOR_FRONT_RIGHT  // Front Right
-#define RL MOTOR_REAR_LEFT  // Rear Left
-#define RR MOTOR_REAR_RIGHT  // Rear Right
-
-#define MASTER FL // setting the master wheel
 
 #define _2PI_5 1.2566370614 // Angle between wheel legs
 #define _PI_5 0.6283185307  // Half of angle between wheel legs
@@ -108,10 +99,10 @@ void PIVController::motionToFourWheelCmd()
 
     double fwd_velocity = mcmd.translation / ROBOT.WHEEL_RADIUS;
     double differential = mcmd.rotation * ROBOT.ROTATION_RADIUS / ROBOT.WHEEL_RADIUS;
-    refVel.target[FL] = fwd_velocity - differential;
-    refVel.target[RL] = fwd_velocity - differential;
-    refVel.target[FR] = fwd_velocity + differential;
-    refVel.target[RR] = fwd_velocity + differential;
+    refVel.target[ROBOT.FRONT_LEFT ] = fwd_velocity - differential;
+    refVel.target[ROBOT.REAR_LEFT  ] = fwd_velocity - differential;
+    refVel.target[ROBOT.FRONT_RIGHT] = fwd_velocity + differential;
+    refVel.target[ROBOT.REAR_RIGHT ] = fwd_velocity + differential;
 
     for(int i=0; i<4; i++)
         if (refVel.target[i] > 7.0)
@@ -207,7 +198,7 @@ void PIVController::updateHook()
     if(refVel.sync)
     {
         for(int i=0;i<4;i++)
-            refVel.target[i] = refVel.target[MASTER];
+            refVel.target[i] = refVel.target[ROBOT.FRONT_LEFT];
     }
 
     for(int i=0; i<4; i++)
@@ -305,16 +296,16 @@ void PIVController::setSyncRefPos(Status status)
         del[i] -=  mul[i] * _2PI_5;
     }
 
-    if(fabs(del[FR]) >= fabs(del[MASTER]))
-	    refPos[FR] = mid_pos[FR] + mul[FR] * _2PI_5 + del[MASTER]  + _PI_5;
+    if(fabs(del[ROBOT.FRONT_RIGHT]) >= fabs(del[ROBOT.FRONT_LEFT]))
+	    refPos[ROBOT.FRONT_RIGHT] = mid_pos[ROBOT.FRONT_RIGHT] + mul[ROBOT.FRONT_RIGHT] * _2PI_5 + del[ROBOT.FRONT_LEFT]  + _PI_5;
     else
-	    refPos[FR] = mid_pos[FR] + mul[FR] * _2PI_5 + del[MASTER]  - _PI_5;
+	    refPos[ROBOT.FRONT_RIGHT] = mid_pos[ROBOT.FRONT_RIGHT] + mul[ROBOT.FRONT_RIGHT] * _2PI_5 + del[ROBOT.FRONT_LEFT]  - _PI_5;
 
-    if(fabs(del[RL]) >= fabs(del[MASTER]))
-	    refPos[RL] = mid_pos[RL] + mul[RL] * _2PI_5 + del[MASTER]  + _PI_5;
+    if(fabs(del[ROBOT.REAR_LEFT]) >= fabs(del[ROBOT.FRONT_LEFT]))
+	    refPos[ROBOT.REAR_LEFT] = mid_pos[ROBOT.REAR_LEFT] + mul[ROBOT.REAR_LEFT] * _2PI_5 + del[ROBOT.FRONT_LEFT]  + _PI_5;
     else
-	    refPos[RL] = mid_pos[RL] + mul[RL] * _2PI_5 + del[MASTER]  - _PI_5;
+	    refPos[ROBOT.REAR_LEFT] = mid_pos[ROBOT.REAR_LEFT] + mul[ROBOT.REAR_LEFT] * _2PI_5 + del[ROBOT.FRONT_LEFT]  - _PI_5;
 
-    refPos[RR] = mid_pos[RR] + mul[RR] * _2PI_5 + del[MASTER];
+    refPos[ROBOT.REAR_RIGHT] = mid_pos[ROBOT.REAR_RIGHT] + mul[ROBOT.REAR_RIGHT] * _2PI_5 + del[ROBOT.FRONT_LEFT];
 }
 
