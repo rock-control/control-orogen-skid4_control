@@ -2,23 +2,35 @@
 #include <iostream>
 #include <math.h>
 #include "../Robot.hpp"
+#include <HBridge.hpp>
 #include <rtt/NonPeriodicActivity.hpp>
 
 #define SAMPLING_TIME 0.001
 
 
 // already defines in drivers/hbridge/HBridge.hpp
-#define FL 3  // Front Left
-#define FR 2  // Front Right
-#define RL 0  // Rear Left
-#define RR 1  // Rear Right
+#define FL MOTOR_FRONT_LEFT // Front Left
+#define FR MOTOR_FRONT_RIGHT  // Front Right
+#define RL MOTOR_REAR_LEFT  // Rear Left
+#define RR MOTOR_REAR_RIGHT  // Rear Right
 
 #define MASTER FL // setting the master wheel
 
 #define _2PI_5 1.2566370614 // Angle between wheel legs
 #define _PI_5 0.6283185307  // Half of angle between wheel legs
 
+#define CALIB_SPEED_PWM 0.12 // PWM speed during calibration
+#define CALIB_WAIT_TIME 300  // Calibration time in ticks
+
+#define POS_P 3.80 // Position proportional gain
+#define VEL_I 0.65 // Velocity integral gain
+#define VEL_P 0.07 // Velocity proportional gain
+#define VEL_SMOOTH 0.6 // Velocity smoothing factor 0 to 1
+
 using namespace control;
+using namespace hbridge;
+using namespace controldev;
+using namespace robot;
 
 RTT::NonPeriodicActivity* PIVController::getNonPeriodicActivity()
 { return dynamic_cast< RTT::NonPeriodicActivity* >(getActivity().get()); }
@@ -42,9 +54,9 @@ bool PIVController::startHook()
 {
     for(int i=0; i<4; i++)
     {
-	oPIV[i].setGains(3.80,0.65,0.07);
+	oPIV[i].setGains(POS_P,VEL_I,VEL_P);
 	oPIV[i].setFeedForwardGain(1.00,0.00);
-	oPIV[i].setVelSmoothingGain(0.6);
+	oPIV[i].setVelSmoothingGain(VEL_SMOOTH);
 	oPIV[i].setSamplingTime(SAMPLING_TIME);
 	oPIV[i].setOutputLimits(-0.6,0.6);
 	oPIV[i].setIntegratorWindupCoeff(0.06);
@@ -52,13 +64,13 @@ bool PIVController::startHook()
     }
 
     oRamp.setInitialData(0.0);
-    oRamp.setFinalData(3.80);
+    oRamp.setFinalData(POS_P);
     oRamp.setDeltaTime(10000.0); // 5 sec
     oRamp.setType(0);  // Linear
 
     for (int i=0;i<4;i++)
     {
-	wmcmd.mode[i] 	= hbridge::DM_PWM;
+	wmcmd.mode[i] 	= DM_PWM;
 	wmcmd.target[i] = 0;
     }
     firstRun = true;
@@ -76,11 +88,11 @@ bool PIVController::startHook()
     return true;
 }
 
-bool PIVController::validInput(controldev::FourWheelCommand const& refVel) const
+bool PIVController::validInput(FourWheelCommand const& refVel) const
 {
     for (int i = 0; i < 4; ++i)
     {
-	if (refVel.mode[i] != controldev::MODE_SPEED)
+	if (refVel.mode[i] != MODE_SPEED)
 	    return false;
 	else if (fabs(refVel.target[i]) > 7.0)
 	    return false;
@@ -93,21 +105,21 @@ void PIVController::motionToFourWheelCmd()
 {
     // The output of this controller is a speed command.
     refVel.mode[0] = refVel.mode[1] =
-        refVel.mode[2] = refVel.mode[3] = controldev::MODE_SPEED;
+        refVel.mode[2] = refVel.mode[3] = MODE_SPEED;
 
-    double fwd_velocity = mcmd.translation / robot::WHEEL_RADIUS;
-    double differential = mcmd.rotation * robot::ROTATION_RADIUS / robot::WHEEL_RADIUS;
-    refVel.target[hbridge::MOTOR_FRONT_LEFT]  = fwd_velocity - differential;
-    refVel.target[hbridge::MOTOR_REAR_LEFT]   = fwd_velocity - differential;
-    refVel.target[hbridge::MOTOR_FRONT_RIGHT] = fwd_velocity + differential;
-    refVel.target[hbridge::MOTOR_REAR_RIGHT]  = fwd_velocity + differential;
+    double fwd_velocity = mcmd.translation / WHEEL_RADIUS;
+    double differential = mcmd.rotation * ROTATION_RADIUS / WHEEL_RADIUS;
+    refVel.target[FL] = fwd_velocity - differential;
+    refVel.target[RL] = fwd_velocity - differential;
+    refVel.target[FR] = fwd_velocity + differential;
+    refVel.target[RR] = fwd_velocity + differential;
 
     for(int i=0; i<4; i++)
         if (refVel.target[i] > 7.0)
                 refVel.target[i] = 7.0;
         else  if (refVel.target[i] < -7.0)
                 refVel.target[i] = -7.0;
-    //std::cout << mcmd.rotation << "    " << mcmd.translation  << std::endl;
+    
     // Check if the robot is going straight
     if(mcmd.rotation >= -0.01 && mcmd.rotation <= 0.01 && (mcmd.translation <= -0.05 || mcmd.translation >= 0.05) )
 	refVel.sync = true;
@@ -118,7 +130,7 @@ void PIVController::motionToFourWheelCmd()
 void PIVController::updateHook()
 {
     // This is the hbridge status
-    hbridge::Status status;
+    Status status;
     if (! _status.read(status))
     {
 	return;
@@ -135,7 +147,7 @@ void PIVController::updateHook()
     if(sync_prev != refVel.sync)
     {
     //    if(refVel.sync == true)
-	    oRamp.reset();
+	oRamp.reset();
         firstRun = true;
     }
 
@@ -163,7 +175,7 @@ void PIVController::updateHook()
     {
 	for (int i=0;i<4;i++)
 	{
-	    wmcmd.mode[i] 	= hbridge::DM_PWM;
+	    wmcmd.mode[i] 	= DM_PWM;
 	    wmcmd.target[i] = 0;
 	}
 	firstRun = true;
@@ -188,7 +200,7 @@ void PIVController::updateHook()
             else
                 refVelIntegrator[i].init(SAMPLING_TIME,0.0,prevPos[i]);
 	    oPIV[i].reset();
-	    wmcmd.mode[i] 	= hbridge::DM_PWM;
+	    wmcmd.mode[i] 	= DM_PWM;
 	}
 	return;
     }
@@ -199,10 +211,9 @@ void PIVController::updateHook()
             refVel.target[i] = refVel.target[MASTER];
     }
 
-    //std::cout <<   oRamp.getVal(currIndex) << std::endl;
     for(int i=0; i<4; i++)
     {	
-	oPIV[i].setGains(oRamp.getVal(currIndex),0.65,0.07);
+	oPIV[i].setGains(oRamp.getVal(currIndex),VEL_I,VEL_P);
 	actVel[i] = (status.states[i].position - prevPos[i]) / ((currIndex - prevIndex) * 0.001);
         refPos[i] = refVelIntegrator[i].update(refVel.target[i]);
 	errPos[i] = refPos[i] - status.states[i].position;
@@ -222,7 +233,7 @@ void PIVController::stopHook()
 {
     for (int i=0;i<4;i++)
     {
-	wmcmd.mode[i] 	= hbridge::DM_PWM;
+	wmcmd.mode[i] 	= DM_PWM;
 	wmcmd.target[i] = 0;
     }
 }
@@ -230,18 +241,18 @@ void PIVController::stopHook()
 // {
 // }
 
-bool PIVController::calibrate(hbridge::Status status)
+bool PIVController::calibrate(Status status)
 {
     bool reached_maximum = true;
     for (int i = 0; i < 4; i++)
     {
-	wmcmd.mode[i] = hbridge::DM_PWM;
-	if (still_motor[i] < 300)
+	wmcmd.mode[i] = DM_PWM;
+	if (still_motor[i] < CALIB_WAIT_TIME)
 	{
 	    if(forward)			// doing calibration in the forward direction
-		wmcmd.target[i] = 0.12; //Slow PWM in the forward direction         		
+		wmcmd.target[i] = CALIB_SPEED_PWM; //Slow PWM in the forward direction         		
 	    else
-		wmcmd.target[i] = -0.12; //Slow PWM in the reverse direction         		
+		wmcmd.target[i] = -CALIB_SPEED_PWM; //Slow PWM in the reverse direction         		
 
 	    if (fabs(last_pos[i] - status.states[i].position) < 0.001)
 		still_motor[i]++;
@@ -282,7 +293,7 @@ bool PIVController::calibrate(hbridge::Status status)
 }
 
 
-void PIVController::setSyncRefPos(hbridge::Status status)
+void PIVController::setSyncRefPos(Status status)
 {
     double del[4];  // Stores the delta position
     int mul[4];  // Stores the integer multiples of 2PI/5
