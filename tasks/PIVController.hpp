@@ -1,6 +1,7 @@
 #ifndef CONTROL_PIVCONTROLLER_TASK_HPP
 #define CONTROL_PIVCONTROLLER_TASK_HPP
 
+#include "base/Robot.hpp"
 #include "control/PIVControllerBase.hpp"
 #include "PIV.hpp"
 #include "Ramp.hpp"
@@ -17,6 +18,10 @@ namespace control {
 	{
 		friend class PIVControllerBase;
 		protected:
+
+
+		base::robot::FourWheelGeom ROBOT;
+
 		controldev::FourWheelCommand refVel;
 		hbridge::SimpleCommand wmcmd;
     		controldev::MotionCommand mcmd;

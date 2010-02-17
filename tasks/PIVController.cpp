@@ -1,7 +1,7 @@
 #include "PIVController.hpp"
 #include <iostream>
 #include <math.h>
-#include "../Robot.hpp"
+
 #include <HBridge.hpp>
 #include <rtt/NonPeriodicActivity.hpp>
 
@@ -30,7 +30,6 @@
 using namespace control;
 using namespace hbridge;
 using namespace controldev;
-using namespace robot;
 
 RTT::NonPeriodicActivity* PIVController::getNonPeriodicActivity()
 { return dynamic_cast< RTT::NonPeriodicActivity* >(getActivity().get()); }
@@ -107,8 +106,8 @@ void PIVController::motionToFourWheelCmd()
     refVel.mode[0] = refVel.mode[1] =
         refVel.mode[2] = refVel.mode[3] = MODE_SPEED;
 
-    double fwd_velocity = mcmd.translation / WHEEL_RADIUS;
-    double differential = mcmd.rotation * ROTATION_RADIUS / WHEEL_RADIUS;
+    double fwd_velocity = mcmd.translation / ROBOT.WHEEL_RADIUS;
+    double differential = mcmd.rotation * ROBOT.ROTATION_RADIUS / ROBOT.WHEEL_RADIUS;
     refVel.target[FL] = fwd_velocity - differential;
     refVel.target[RL] = fwd_velocity - differential;
     refVel.target[FR] = fwd_velocity + differential;

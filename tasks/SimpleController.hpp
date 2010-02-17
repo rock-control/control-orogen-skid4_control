@@ -2,16 +2,19 @@
 #define HBRIDGE_SIMPLECONTROLLER_TASK_HPP
 
 #include "control/SimpleControllerBase.hpp"
-
+#include "base/Robot.hpp"
 
 
 namespace control {
     class SimpleController : public SimpleControllerBase
     {
 	friend class SimpleControllerBase;
+
+	base::robot::FourWheelGeom ROBOT;
+
+
     protected:
-    
-    
+   
 	bool drive(double translation, double rotation, int duration);
 	bool isdriveCompleted(double translation, double rotation, int duration);
     

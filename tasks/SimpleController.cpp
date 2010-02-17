@@ -1,5 +1,4 @@
 #include "SimpleController.hpp"
-#include "../Robot.hpp"
 #include <HBridge.hpp>
 
 
@@ -41,8 +40,8 @@ void SimpleController::updateHook()
     cmd_out.mode[0] = cmd_out.mode[1] =
         cmd_out.mode[2] = cmd_out.mode[3] = hbridge::DM_SPEED;
 
-    double fwd_velocity = cmd_in.translation / robot::WHEEL_RADIUS;
-    double differential = cmd_in.rotation * robot::ROTATION_RADIUS / robot::WHEEL_RADIUS;
+    double fwd_velocity = cmd_in.translation / ROBOT.WHEEL_RADIUS;
+    double differential = cmd_in.rotation * ROBOT.ROTATION_RADIUS / ROBOT.WHEEL_RADIUS;
     cmd_out.target[hbridge::MOTOR_FRONT_LEFT]  = fwd_velocity - differential;
     cmd_out.target[hbridge::MOTOR_REAR_LEFT]   = fwd_velocity - differential;
     cmd_out.target[hbridge::MOTOR_FRONT_RIGHT] = fwd_velocity + differential;
