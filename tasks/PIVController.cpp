@@ -97,8 +97,8 @@ void PIVController::motionToFourWheelCmd()
     refVel.mode[0] = refVel.mode[1] =
         refVel.mode[2] = refVel.mode[3] = MODE_SPEED;
 
-    double fwd_velocity = mcmd.translation / ROBOT.WHEEL_RADIUS;
-    double differential = mcmd.rotation * ROBOT.ROTATION_RADIUS / ROBOT.WHEEL_RADIUS;
+    double fwd_velocity = mcmd.translation / ROBOT.WHEEL_RADIUS_EFF;
+    double differential = mcmd.rotation * ROBOT.TRACK / ROBOT.WHEEL_RADIUS_EFF;
     refVel.target[ROBOT.FRONT_LEFT ] = fwd_velocity - differential;
     refVel.target[ROBOT.REAR_LEFT  ] = fwd_velocity - differential;
     refVel.target[ROBOT.FRONT_RIGHT] = fwd_velocity + differential;
