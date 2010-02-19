@@ -20,12 +20,13 @@ namespace control {
 		protected:
 
 
-		base::robot::FourWheelGeom ROBOT;
+		base::robot::FourWheelGeom  ROBOT;
+		base::robot::MotorConstants MOTOR;
 
-		controldev::FourWheelCommand refVel;
-		hbridge::SimpleCommand wmcmd;
-    		controldev::MotionCommand mcmd;
-		motor_controller::Ramp oRamp;
+		controldev::FourWheelCommand 	refVel;
+		hbridge::SimpleCommand 		wmcmd;
+    		controldev::MotionCommand 	mcmd;
+		motor_controller::Ramp 		oRamp;
 		
 	  	// Data members for Controlling	
 		motor_controller::PIV oPIV[4];

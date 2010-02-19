@@ -2,21 +2,11 @@
 #include <iostream>
 #include <math.h>
 
-//#include <HBridge.hpp>
 #include <rtt/NonPeriodicActivity.hpp>
 
-#define SAMPLING_TIME 0.001
-
-#define _2PI_5 1.2566370614 // Angle between wheel legs
-#define _PI_5 0.6283185307  // Half of angle between wheel legs
-
+#define SAMPLING_TIME   0.001
 #define CALIB_SPEED_PWM 0.12 // PWM speed during calibration
 #define CALIB_WAIT_TIME 300  // Calibration time in ticks
-
-#define POS_P 3.80 // Position proportional gain
-#define VEL_I 0.65 // Velocity integral gain
-#define VEL_P 0.07 // Velocity proportional gain
-#define VEL_SMOOTH 0.6 // Velocity smoothing factor 0 to 1
 
 using namespace control;
 using namespace hbridge;
@@ -44,17 +34,17 @@ bool PIVController::startHook()
 {
     for(int i=0; i<4; i++)
     {
-	oPIV[i].setGains(POS_P,VEL_I,VEL_P);
-	oPIV[i].setFeedForwardGain(1.00,0.00);
-	oPIV[i].setVelSmoothingGain(VEL_SMOOTH);
+	oPIV[i].setGains(MOTOR.POS_P,MOTOR.VEL_I,MOTOR.VEL_P);
+	oPIV[i].setFeedForwardGain(MOTOR.VEL_FF,MOTOR.ACC_FF);
+	oPIV[i].setVelSmoothingGain(MOTOR.VEL_SMOOTH);
 	oPIV[i].setSamplingTime(SAMPLING_TIME);
 	oPIV[i].setOutputLimits(-0.6,0.6);
-	oPIV[i].setIntegratorWindupCoeff(0.06);
+	oPIV[i].setIntegratorWindupCoeff(MOTOR.INT_WIND_UP);
 	oPIV[i].setPositionController(true);
     }
 
     oRamp.setInitialData(0.0);
-    oRamp.setFinalData(POS_P);
+    oRamp.setFinalData(MOTOR.POS_P);
     oRamp.setDeltaTime(10000.0); // 5 sec
     oRamp.setType(0);  // Linear
 
@@ -203,7 +193,7 @@ void PIVController::updateHook()
 
     for(int i=0; i<4; i++)
     {	
-	oPIV[i].setGains(oRamp.getVal(currIndex),VEL_I,VEL_P);
+	oPIV[i].setGains(oRamp.getVal(currIndex),MOTOR.VEL_I,MOTOR.VEL_P);
 	actVel[i] = (status.states[i].position - prevPos[i]) / ((currIndex - prevIndex) * 0.001);
         refPos[i] = refVelIntegrator[i].update(refVel.target[i]);
 	errPos[i] = refPos[i] - status.states[i].position;
@@ -292,20 +282,20 @@ void PIVController::setSyncRefPos(Status status)
     {
         refPos[i] = status.states[i].position;
         del[i] = refPos[i] - mid_pos[i];	
-        mul[i] = (int) del[i] / _2PI_5;
-        del[i] -=  mul[i] * _2PI_5;
+        mul[i] = (int) del[i] / MOTOR._2PI_5;
+        del[i] -=  mul[i] * MOTOR._2PI_5;
     }
 
     if(fabs(del[ROBOT.FRONT_RIGHT]) >= fabs(del[ROBOT.FRONT_LEFT]))
-	    refPos[ROBOT.FRONT_RIGHT] = mid_pos[ROBOT.FRONT_RIGHT] + mul[ROBOT.FRONT_RIGHT] * _2PI_5 + del[ROBOT.FRONT_LEFT]  + _PI_5;
+	    refPos[ROBOT.FRONT_RIGHT] = mid_pos[ROBOT.FRONT_RIGHT] + mul[ROBOT.FRONT_RIGHT] * MOTOR._2PI_5 + del[ROBOT.FRONT_LEFT]  + MOTOR._PI_5;
     else
-	    refPos[ROBOT.FRONT_RIGHT] = mid_pos[ROBOT.FRONT_RIGHT] + mul[ROBOT.FRONT_RIGHT] * _2PI_5 + del[ROBOT.FRONT_LEFT]  - _PI_5;
+	    refPos[ROBOT.FRONT_RIGHT] = mid_pos[ROBOT.FRONT_RIGHT] + mul[ROBOT.FRONT_RIGHT] * MOTOR._2PI_5 + del[ROBOT.FRONT_LEFT]  - MOTOR._PI_5;
 
     if(fabs(del[ROBOT.REAR_LEFT]) >= fabs(del[ROBOT.FRONT_LEFT]))
-	    refPos[ROBOT.REAR_LEFT] = mid_pos[ROBOT.REAR_LEFT] + mul[ROBOT.REAR_LEFT] * _2PI_5 + del[ROBOT.FRONT_LEFT]  + _PI_5;
+	    refPos[ROBOT.REAR_LEFT] = mid_pos[ROBOT.REAR_LEFT] + mul[ROBOT.REAR_LEFT] * MOTOR._2PI_5 + del[ROBOT.FRONT_LEFT]  + MOTOR._PI_5;
     else
-	    refPos[ROBOT.REAR_LEFT] = mid_pos[ROBOT.REAR_LEFT] + mul[ROBOT.REAR_LEFT] * _2PI_5 + del[ROBOT.FRONT_LEFT]  - _PI_5;
+	    refPos[ROBOT.REAR_LEFT] = mid_pos[ROBOT.REAR_LEFT] + mul[ROBOT.REAR_LEFT] * MOTOR._2PI_5 + del[ROBOT.FRONT_LEFT]  - MOTOR._PI_5;
 
-    refPos[ROBOT.REAR_RIGHT] = mid_pos[ROBOT.REAR_RIGHT] + mul[ROBOT.REAR_RIGHT] * _2PI_5 + del[ROBOT.FRONT_LEFT];
+    refPos[ROBOT.REAR_RIGHT] = mid_pos[ROBOT.REAR_RIGHT] + mul[ROBOT.REAR_RIGHT] * MOTOR._2PI_5 + del[ROBOT.FRONT_LEFT];
 }
 
