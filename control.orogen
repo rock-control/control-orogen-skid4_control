@@ -5,6 +5,7 @@ using_toolkit "base"
 using_toolkit "controldev"
 using_toolkit "hbridge"
 using_library "hbridge"
+using_library "motor_controller"
 
 import_types_from "ControllerTypes.hpp"
 
