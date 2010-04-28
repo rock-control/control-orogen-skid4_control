@@ -6,6 +6,7 @@ using_toolkit "controldev"
 using_toolkit "hbridge"
 using_library "hbridge"
 using_library "motor_controller"
+using_library "asguard"
 
 import_types_from "ControllerTypes.hpp"
 

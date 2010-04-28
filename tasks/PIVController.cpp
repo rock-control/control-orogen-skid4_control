@@ -6,7 +6,8 @@
 
 #define SAMPLING_TIME   0.001
 #define CALIB_SPEED_PWM 0.12 // PWM speed during calibration
-#define CALIB_WAIT_TIME 300  // Calibration time in ticks
+#define CALIB_WAIT_TIME 300.0  // Calibration time in ticks
+#define RAMP_POS_TIME 10000.0  // Position controller ramp up time time in ticks
 
 using namespace control;
 using namespace hbridge;
@@ -34,18 +35,18 @@ bool PIVController::startHook()
 {
     for(int i=0; i<4; i++)
     {
-	oPIV[i].setGains(MOTOR.POS_P,MOTOR.VEL_I,MOTOR.VEL_P);
-	oPIV[i].setFeedForwardGain(MOTOR.VEL_FF,MOTOR.ACC_FF);
-	oPIV[i].setVelSmoothingGain(MOTOR.VEL_SMOOTH);
+	oPIV[i].setGains(asguardMotorConf.posP,asguardMotorConf.velI,asguardMotorConf.velP);
+	oPIV[i].setFeedForwardGain(asguardMotorConf.velFF,asguardMotorConf.accFF);
+	oPIV[i].setVelSmoothingGain(asguardMotorConf.velSmooth);
 	oPIV[i].setSamplingTime(SAMPLING_TIME);
 	oPIV[i].setOutputLimits(-0.6,0.6);
-	oPIV[i].setIntegratorWindupCoeff(MOTOR.INT_WIND_UP);
+	oPIV[i].setIntegratorWindupCoeff(asguardMotorConf.integralWindup);
 	oPIV[i].setPositionController(true);
     }
 
     oRamp.setInitialData(0.0);
-    oRamp.setFinalData(MOTOR.POS_P);
-    oRamp.setDeltaTime(10000.0); // 5 sec
+    oRamp.setFinalData(asguardMotorConf.posP);
+    oRamp.setDeltaTime(RAMP_POS_TIME); // 5 sec
     oRamp.setType(0);  // Linear
 
     for (int i=0;i<4;i++)
@@ -55,14 +56,14 @@ bool PIVController::startHook()
     }
     firstRun = true;
     sync_prev = false;
-    forward = true;
+    calib_forward = true;
     calibrated = false;
     for (int i = 0; i < 4; ++i)
     {
 	still_motor[i] = 0;			//Initializing all the variables
 	last_pos[i] = 0;
     }
-
+    
     _status.clear();
     _four_wheel_command.clear();
     return true;
@@ -87,12 +88,12 @@ void PIVController::motionToFourWheelCmd()
     refVel.mode[0] = refVel.mode[1] =
         refVel.mode[2] = refVel.mode[3] = MODE_SPEED;
 
-    double fwd_velocity = mcmd.translation / ROBOT.WHEEL_RADIUS_EFF;
-    double differential = mcmd.rotation * ROBOT.TRACK / ROBOT.WHEEL_RADIUS_EFF;
-    refVel.target[ROBOT.FRONT_LEFT ] = fwd_velocity - differential;
-    refVel.target[ROBOT.REAR_LEFT  ] = fwd_velocity - differential;
-    refVel.target[ROBOT.FRONT_RIGHT] = fwd_velocity + differential;
-    refVel.target[ROBOT.REAR_RIGHT ] = fwd_velocity + differential;
+    double fwd_velocity = mcmd.translation / asguardConf.wheelRadiusAvg;
+    double differential = mcmd.rotation * asguardConf.trackWidth / asguardConf.wheelRadiusAvg;
+    refVel.target[asguardConf.FRONT_LEFT ] = fwd_velocity - differential;
+    refVel.target[asguardConf.REAR_LEFT  ] = fwd_velocity - differential;
+    refVel.target[asguardConf.FRONT_RIGHT] = fwd_velocity + differential;
+    refVel.target[asguardConf.REAR_RIGHT ] = fwd_velocity + differential;
 
     for(int i=0; i<4; i++)
         if (refVel.target[i] > 7.0)
@@ -188,12 +189,12 @@ void PIVController::updateHook()
     if(refVel.sync)
     {
         for(int i=0;i<4;i++)
-            refVel.target[i] = refVel.target[ROBOT.FRONT_LEFT];
+            refVel.target[i] = refVel.target[asguardConf.FRONT_LEFT];
     }
 
     for(int i=0; i<4; i++)
     {	
-	oPIV[i].setGains(oRamp.getVal(currIndex),MOTOR.VEL_I,MOTOR.VEL_P);
+	oPIV[i].setGains(oRamp.getVal(currIndex),asguardMotorConf.velI,asguardMotorConf.velP);
 	actVel[i] = (status.states[i].position - prevPos[i]) / ((currIndex - prevIndex) * 0.001);
         refPos[i] = refVelIntegrator[i].update(refVel.target[i]);
 	errPos[i] = refPos[i] - status.states[i].position;
@@ -229,7 +230,7 @@ bool PIVController::calibrate(Status status)
 	wmcmd.mode[i] = DM_PWM;
 	if (still_motor[i] < CALIB_WAIT_TIME)
 	{
-	    if(forward)			// doing calibration in the forward direction
+	    if(calib_forward)			// doing calibration in the forward direction
 		wmcmd.target[i] = CALIB_SPEED_PWM; //Slow PWM in the forward direction         		
 	    else
 		wmcmd.target[i] = -CALIB_SPEED_PWM; //Slow PWM in the reverse direction         		
@@ -248,14 +249,14 @@ bool PIVController::calibrate(Status status)
 
     if (reached_maximum)
     {
-	if (forward)
+	if (calib_forward)
 	{	
 	    for(int i=0;i<4;i++)	
 	    {
 		init_pos[i] = status.states[i].position; // store initial calibration data
 		still_motor[i] = 0; // Re-Initialize to Zero for the reverse direction calibration
 	    }
-	    forward = false;
+	    calib_forward = false;
 	    reached_maximum = false;
 	}
 	else
@@ -282,20 +283,20 @@ void PIVController::setSyncRefPos(Status status)
     {
         refPos[i] = status.states[i].position;
         del[i] = refPos[i] - mid_pos[i];	
-        mul[i] = (int) del[i] / MOTOR._2PI_5;
-        del[i] -=  mul[i] * MOTOR._2PI_5;
+        mul[i] = (int) del[i] / asguardMotorConf._2PI_5;
+        del[i] -=  mul[i] * asguardMotorConf._2PI_5;
     }
 
-    if(fabs(del[ROBOT.FRONT_RIGHT]) >= fabs(del[ROBOT.FRONT_LEFT]))
-	    refPos[ROBOT.FRONT_RIGHT] = mid_pos[ROBOT.FRONT_RIGHT] + mul[ROBOT.FRONT_RIGHT] * MOTOR._2PI_5 + del[ROBOT.FRONT_LEFT]  + MOTOR._PI_5;
+    if(fabs(del[asguardConf.FRONT_RIGHT]) >= fabs(del[asguardConf.FRONT_LEFT]))
+	    refPos[asguardConf.FRONT_RIGHT] = mid_pos[asguardConf.FRONT_RIGHT] + mul[asguardConf.FRONT_RIGHT] * asguardMotorConf._2PI_5 + del[asguardConf.FRONT_LEFT]  + asguardMotorConf._PI_5;
     else
-	    refPos[ROBOT.FRONT_RIGHT] = mid_pos[ROBOT.FRONT_RIGHT] + mul[ROBOT.FRONT_RIGHT] * MOTOR._2PI_5 + del[ROBOT.FRONT_LEFT]  - MOTOR._PI_5;
+	    refPos[asguardConf.FRONT_RIGHT] = mid_pos[asguardConf.FRONT_RIGHT] + mul[asguardConf.FRONT_RIGHT] * asguardMotorConf._2PI_5 + del[asguardConf.FRONT_LEFT]  - asguardMotorConf._PI_5;
 
-    if(fabs(del[ROBOT.REAR_LEFT]) >= fabs(del[ROBOT.FRONT_LEFT]))
-	    refPos[ROBOT.REAR_LEFT] = mid_pos[ROBOT.REAR_LEFT] + mul[ROBOT.REAR_LEFT] * MOTOR._2PI_5 + del[ROBOT.FRONT_LEFT]  + MOTOR._PI_5;
+    if(fabs(del[asguardConf.REAR_LEFT]) >= fabs(del[asguardConf.FRONT_LEFT]))
+	    refPos[asguardConf.REAR_LEFT] = mid_pos[asguardConf.REAR_LEFT] + mul[asguardConf.REAR_LEFT] * asguardMotorConf._2PI_5 + del[asguardConf.FRONT_LEFT]  + asguardMotorConf._PI_5;
     else
-	    refPos[ROBOT.REAR_LEFT] = mid_pos[ROBOT.REAR_LEFT] + mul[ROBOT.REAR_LEFT] * MOTOR._2PI_5 + del[ROBOT.FRONT_LEFT]  - MOTOR._PI_5;
+	    refPos[asguardConf.REAR_LEFT] = mid_pos[asguardConf.REAR_LEFT] + mul[asguardConf.REAR_LEFT] * asguardMotorConf._2PI_5 + del[asguardConf.FRONT_LEFT]  - asguardMotorConf._PI_5;
 
-    refPos[ROBOT.REAR_RIGHT] = mid_pos[ROBOT.REAR_RIGHT] + mul[ROBOT.REAR_RIGHT] * MOTOR._2PI_5 + del[ROBOT.FRONT_LEFT];
+    refPos[asguardConf.REAR_RIGHT] = mid_pos[asguardConf.REAR_RIGHT] + mul[asguardConf.REAR_RIGHT] * asguardMotorConf._2PI_5 + del[asguardConf.FRONT_LEFT];
 }
 

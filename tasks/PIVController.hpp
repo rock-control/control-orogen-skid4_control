@@ -1,7 +1,8 @@
 #ifndef CONTROL_PIVCONTROLLER_TASK_HPP
 #define CONTROL_PIVCONTROLLER_TASK_HPP
 
-#include "base/Robot.hpp"
+//#include "base/Robot.hpp"
+#include "asguard/Configuration.hpp"
 #include "control/PIVControllerBase.hpp"
 #include "PIV.hpp"
 #include "Ramp.hpp"
@@ -20,8 +21,8 @@ namespace control {
 		protected:
 
 
-		base::robot::FourWheelGeom  ROBOT;
-		base::robot::MotorConstants MOTOR;
+		asguard::Configuration asguardConf;
+		asguard::MotorConstants asguardMotorConf;
 
 		controldev::FourWheelCommand 	refVel;
 		hbridge::SimpleCommand 		wmcmd;
@@ -42,7 +43,7 @@ namespace control {
 
 		// Data members for calibration
 		bool calibrated;
-		bool forward;
+		bool calib_forward;
 		double last_pos[4],init_pos[4],final_pos[4],mid_pos[4];
 		int still_motor[4];
 	

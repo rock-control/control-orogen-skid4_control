@@ -2,7 +2,7 @@
 #define HBRIDGE_SIMPLECONTROLLER_TASK_HPP
 
 #include "control/SimpleControllerBase.hpp"
-#include "base/Robot.hpp"
+#include "asguard/Configuration.hpp"
 
 
 namespace control {
@@ -10,7 +10,7 @@ namespace control {
     {
 	friend class SimpleControllerBase;
 
-	base::robot::FourWheelGeom ROBOT;
+	asguard::Configuration asguardConf;
 
 
     protected:
