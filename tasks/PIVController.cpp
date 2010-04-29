@@ -90,10 +90,10 @@ void PIVController::motionToFourWheelCmd()
 
     double fwd_velocity = mcmd.translation / asguardConf.wheelRadiusAvg;
     double differential = mcmd.rotation * asguardConf.trackWidth / asguardConf.wheelRadiusAvg;
-    refVel.target[asguardConf.FRONT_LEFT ] = fwd_velocity - differential;
-    refVel.target[asguardConf.REAR_LEFT  ] = fwd_velocity - differential;
-    refVel.target[asguardConf.FRONT_RIGHT] = fwd_velocity + differential;
-    refVel.target[asguardConf.REAR_RIGHT ] = fwd_velocity + differential;
+    refVel.target[asguard::FRONT_LEFT ] = fwd_velocity - differential;
+    refVel.target[asguard::REAR_LEFT  ] = fwd_velocity - differential;
+    refVel.target[asguard::FRONT_RIGHT] = fwd_velocity + differential;
+    refVel.target[asguard::REAR_RIGHT ] = fwd_velocity + differential;
 
     for(int i=0; i<4; i++)
         if (refVel.target[i] > 7.0)
@@ -189,7 +189,7 @@ void PIVController::updateHook()
     if(refVel.sync)
     {
         for(int i=0;i<4;i++)
-            refVel.target[i] = refVel.target[asguardConf.FRONT_LEFT];
+            refVel.target[i] = refVel.target[asguard::FRONT_LEFT];
     }
 
     for(int i=0; i<4; i++)
@@ -287,16 +287,16 @@ void PIVController::setSyncRefPos(Status status)
         del[i] -=  mul[i] * asguardMotorConf._2PI_5;
     }
 
-    if(fabs(del[asguardConf.FRONT_RIGHT]) >= fabs(del[asguardConf.FRONT_LEFT]))
-	    refPos[asguardConf.FRONT_RIGHT] = mid_pos[asguardConf.FRONT_RIGHT] + mul[asguardConf.FRONT_RIGHT] * asguardMotorConf._2PI_5 + del[asguardConf.FRONT_LEFT]  + asguardMotorConf._PI_5;
+    if(fabs(del[asguard::FRONT_RIGHT]) >= fabs(del[asguard::FRONT_LEFT]))
+	    refPos[asguard::FRONT_RIGHT] = mid_pos[asguard::FRONT_RIGHT] + mul[asguard::FRONT_RIGHT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  + asguardMotorConf._PI_5;
     else
-	    refPos[asguardConf.FRONT_RIGHT] = mid_pos[asguardConf.FRONT_RIGHT] + mul[asguardConf.FRONT_RIGHT] * asguardMotorConf._2PI_5 + del[asguardConf.FRONT_LEFT]  - asguardMotorConf._PI_5;
+	    refPos[asguard::FRONT_RIGHT] = mid_pos[asguard::FRONT_RIGHT] + mul[asguard::FRONT_RIGHT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  - asguardMotorConf._PI_5;
 
-    if(fabs(del[asguardConf.REAR_LEFT]) >= fabs(del[asguardConf.FRONT_LEFT]))
-	    refPos[asguardConf.REAR_LEFT] = mid_pos[asguardConf.REAR_LEFT] + mul[asguardConf.REAR_LEFT] * asguardMotorConf._2PI_5 + del[asguardConf.FRONT_LEFT]  + asguardMotorConf._PI_5;
+    if(fabs(del[asguard::REAR_LEFT]) >= fabs(del[asguard::FRONT_LEFT]))
+	    refPos[asguard::REAR_LEFT] = mid_pos[asguard::REAR_LEFT] + mul[asguard::REAR_LEFT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  + asguardMotorConf._PI_5;
     else
-	    refPos[asguardConf.REAR_LEFT] = mid_pos[asguardConf.REAR_LEFT] + mul[asguardConf.REAR_LEFT] * asguardMotorConf._2PI_5 + del[asguardConf.FRONT_LEFT]  - asguardMotorConf._PI_5;
+	    refPos[asguard::REAR_LEFT] = mid_pos[asguard::REAR_LEFT] + mul[asguard::REAR_LEFT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  - asguardMotorConf._PI_5;
 
-    refPos[asguardConf.REAR_RIGHT] = mid_pos[asguardConf.REAR_RIGHT] + mul[asguardConf.REAR_RIGHT] * asguardMotorConf._2PI_5 + del[asguardConf.FRONT_LEFT];
+    refPos[asguard::REAR_RIGHT] = mid_pos[asguard::REAR_RIGHT] + mul[asguard::REAR_RIGHT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT];
 }
 

@@ -1,7 +1,6 @@
 #ifndef CONTROL_PIVCONTROLLER_TASK_HPP
 #define CONTROL_PIVCONTROLLER_TASK_HPP
 
-//#include "base/Robot.hpp"
 #include "asguard/Configuration.hpp"
 #include "control/PIVControllerBase.hpp"
 #include "PIV.hpp"
