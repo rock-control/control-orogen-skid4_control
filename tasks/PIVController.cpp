@@ -278,25 +278,46 @@ void PIVController::setSyncRefPos(Status status)
 {
     double del[4];  // Stores the delta position
     int mul[4];  // Stores the integer multiples of 2PI/5
+    double wheel_offset[4];
+
+    // wheel offset between -PI/5 and +PI/5
+    //  0 being the double leg contact phase
+    //  -PI/5 and +PI/5 being the leg vertical phase
+    wheel_offset[asguard::FRONT_LEFT ] = 0.0;
+    wheel_offset[asguard::FRONT_RIGHT] = asguardMotorConf._PI_5;
+    wheel_offset[asguard::REAR_LEFT  ] = asguardMotorConf._PI_5;
+    wheel_offset[asguard::REAR_RIGHT ] = 0.0;
 
     for(int i=0;i<4;i++)
     {
         refPos[i] = status.states[i].position;
         del[i] = refPos[i] - mid_pos[i];	
-        mul[i] = (int) del[i] / asguardMotorConf._2PI_5;
+        mul[i] = round(del[i] / asguardMotorConf._2PI_5);
         del[i] -=  mul[i] * asguardMotorConf._2PI_5;
+	
+	refPos[i] = 
+	    mid_pos[i] 
+	    + mul[i] * asguardMotorConf._2PI_5 
+	    + wheel_offset[i];
     }
 
-    if(fabs(del[asguard::FRONT_RIGHT]) >= fabs(del[asguard::FRONT_LEFT]))
-	    refPos[asguard::FRONT_RIGHT] = mid_pos[asguard::FRONT_RIGHT] + mul[asguard::FRONT_RIGHT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  + asguardMotorConf._PI_5;
-    else
-	    refPos[asguard::FRONT_RIGHT] = mid_pos[asguard::FRONT_RIGHT] + mul[asguard::FRONT_RIGHT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  - asguardMotorConf._PI_5;
-
-    if(fabs(del[asguard::REAR_LEFT]) >= fabs(del[asguard::FRONT_LEFT]))
-	    refPos[asguard::REAR_LEFT] = mid_pos[asguard::REAR_LEFT] + mul[asguard::REAR_LEFT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  + asguardMotorConf._PI_5;
-    else
-	    refPos[asguard::REAR_LEFT] = mid_pos[asguard::REAR_LEFT] + mul[asguard::REAR_LEFT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  - asguardMotorConf._PI_5;
-
-    refPos[asguard::REAR_RIGHT] = mid_pos[asguard::REAR_RIGHT] + mul[asguard::REAR_RIGHT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT];
+//    for(int i=0;i<4;i++)
+//    {
+//        refPos[i] = status.states[i].position;
+//        del[i] = refPos[i] - mid_pos[i];	
+//        mul[i] = (int) del[i] / asguardMotorConf._2PI_5;
+//        del[i] -=  mul[i] * asguardMotorConf._2PI_5;
+//    }
+//    if(fabs(del[asguard::FRONT_RIGHT]) >= fabs(del[asguard::FRONT_LEFT]))
+//	    refPos[asguard::FRONT_RIGHT] = mid_pos[asguard::FRONT_RIGHT] + mul[asguard::FRONT_RIGHT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  + asguardMotorConf._PI_5;
+//    else
+//	    refPos[asguard::FRONT_RIGHT] = mid_pos[asguard::FRONT_RIGHT] + mul[asguard::FRONT_RIGHT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  - asguardMotorConf._PI_5;
+//
+//    if(fabs(del[asguard::REAR_LEFT]) >= fabs(del[asguard::FRONT_LEFT]))
+//	    refPos[asguard::REAR_LEFT] = mid_pos[asguard::REAR_LEFT] + mul[asguard::REAR_LEFT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  + asguardMotorConf._PI_5;
+//    else
+//	    refPos[asguard::REAR_LEFT] = mid_pos[asguard::REAR_LEFT] + mul[asguard::REAR_LEFT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  - asguardMotorConf._PI_5;
+//
+//    refPos[asguard::REAR_RIGHT] = mid_pos[asguard::REAR_RIGHT] + mul[asguard::REAR_RIGHT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT];
 }
 
