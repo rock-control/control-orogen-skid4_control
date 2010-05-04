@@ -52,6 +52,8 @@ namespace control {
 		bool calibrate(hbridge::Status status);
 		void setSyncRefPos(hbridge::Status status);
 		void motionToFourWheelCmd();
+		void getLegStances(hbridge::Status status, double* wheelPos);
+		void accFF(hbridge::Status status, double* wheelPos, double *wheelAccFF);
 
 		public:
 		PIVController(std::string const& name = "control::PIVController", TaskCore::TaskState initial_state = Stopped);

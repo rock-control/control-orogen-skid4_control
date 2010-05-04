@@ -300,24 +300,27 @@ void PIVController::setSyncRefPos(Status status)
 	    + mul[i] * asguardMotorConf._2PI_5 
 	    + wheel_offset[i];
     }
-
-//    for(int i=0;i<4;i++)
-//    {
-//        refPos[i] = status.states[i].position;
-//        del[i] = refPos[i] - mid_pos[i];	
-//        mul[i] = (int) del[i] / asguardMotorConf._2PI_5;
-//        del[i] -=  mul[i] * asguardMotorConf._2PI_5;
-//    }
-//    if(fabs(del[asguard::FRONT_RIGHT]) >= fabs(del[asguard::FRONT_LEFT]))
-//	    refPos[asguard::FRONT_RIGHT] = mid_pos[asguard::FRONT_RIGHT] + mul[asguard::FRONT_RIGHT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  + asguardMotorConf._PI_5;
-//    else
-//	    refPos[asguard::FRONT_RIGHT] = mid_pos[asguard::FRONT_RIGHT] + mul[asguard::FRONT_RIGHT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  - asguardMotorConf._PI_5;
-//
-//    if(fabs(del[asguard::REAR_LEFT]) >= fabs(del[asguard::FRONT_LEFT]))
-//	    refPos[asguard::REAR_LEFT] = mid_pos[asguard::REAR_LEFT] + mul[asguard::REAR_LEFT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  + asguardMotorConf._PI_5;
-//    else
-//	    refPos[asguard::REAR_LEFT] = mid_pos[asguard::REAR_LEFT] + mul[asguard::REAR_LEFT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT]  - asguardMotorConf._PI_5;
-//
-//    refPos[asguard::REAR_RIGHT] = mid_pos[asguard::REAR_RIGHT] + mul[asguard::REAR_RIGHT] * asguardMotorConf._2PI_5 + del[asguard::FRONT_LEFT];
 }
 
+// Returns the position of the legs
+// 0 means leg in double contact stance
+// -PI/5 and +PI/5 means vertical stance
+void PIVController::getLegStances(Status status, double* wheelPos)
+{
+    for(int i=0;i<4;i++)
+    {
+        wheelPos[i] = status.states[i].position - mid_pos[i];	
+        wheelPos[i] -=  round(wheelPos[i] / asguardMotorConf._2PI_5) * asguardMotorConf._2PI_5;
+    }
+}
+
+// Returns the acceleration feed forward profile for the wheels
+// accFF value between -1 and 1 depending on the leg stance -PI/5 to +PI/5
+void PIVController::accFF(Status status, double* wheelPos, double *wheelAccFF)
+{
+    getLegStances(status, wheelPos);
+    for(int i=0; i<4; i++)
+    {
+   	 wheelAccFF[i] = wheelPos[i]/asguardMotorConf._PI_5;
+    }
+}
