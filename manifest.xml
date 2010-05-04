@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<package>
+  <depend package="control/motor_controller"/>
+  <depend package="drivers/hbridge"/>
+  <depend package="modules/canbus"/>
+  <depend package="modules/controldev"/>
+  <depend package="modules/hbridge"/>
+  <depend package="orocos/base"/>
+  <depend package="orocos/logger"/>
+  <depend package="orocos/orogen"/>
+  <depend package="orocos/rtt"/>
+  <depend package="robots/asguard"/>
+</package>
