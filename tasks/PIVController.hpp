@@ -26,7 +26,8 @@ namespace control {
 		controldev::FourWheelCommand 	refVel;
 		hbridge::SimpleCommand 		wmcmd;
     		controldev::MotionCommand 	mcmd;
-		motor_controller::Ramp 		oRamp;
+		motor_controller::Ramp 		oPositionControllerRamp;
+		motor_controller::Ramp 		oVelocityRamp;
 		
 	  	// Data members for Controlling	
 		motor_controller::PIV oPIV[4];

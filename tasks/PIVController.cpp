@@ -8,6 +8,7 @@
 #define CALIB_SPEED_PWM 0.12 // PWM speed during calibration
 #define CALIB_WAIT_TIME 300.0  // Calibration time in ticks
 #define RAMP_POS_TIME 10000.0  // Position controller ramp up time time in ticks
+#define RAMP_VEL_TIME 10000.0  // Position controller ramp up time time in ticks
 
 using namespace control;
 using namespace hbridge;
@@ -20,6 +21,12 @@ RTT::NonPeriodicActivity* PIVController::getNonPeriodicActivity()
     PIVController::PIVController(std::string const& name, TaskCore::TaskState initial_state)
 : PIVControllerBase(name, initial_state)
 {
+    _experiment_on.set(false);
+    _forward_speed.set(0.0);
+    _offset_wheel_FL.set(0.0);
+    _offset_wheel_FR.set(0.0);
+    _offset_wheel_RL.set(0.0);
+    _offset_wheel_RR.set(0.0);
 }
 
 
@@ -44,10 +51,15 @@ bool PIVController::startHook()
 	oPIV[i].setPositionController(true);
     }
 
-    oRamp.setInitialData(0.0);
-    oRamp.setFinalData(asguardMotorConf.posP);
-    oRamp.setDeltaTime(RAMP_POS_TIME); // 5 sec
-    oRamp.setType(0);  // Linear
+    oPositionControllerRamp.setInitialData(0.0);
+    oPositionControllerRamp.setFinalData(asguardMotorConf.posP);
+    oPositionControllerRamp.setDeltaTime(RAMP_POS_TIME); // 5 sec
+    oPositionControllerRamp.setType(0);  // Linear
+
+    oVelocityRamp.setInitialData(0.0);
+    oVelocityRamp.setFinalData(_forward_speed.get());
+    oVelocityRamp.setDeltaTime(RAMP_VEL_TIME); // 5 sec
+    oVelocityRamp.setType(0);  // Linear
 
     for (int i=0;i<4;i++)
     {
@@ -119,16 +131,21 @@ void PIVController::updateHook()
 
     if(_four_wheel_command.connected())
 	_four_wheel_command.read (refVel);
-    else
+    else if(_motion_command.connected())
     {
-        _motion_command.read(mcmd);
+	_motion_command.read(mcmd);
 	motionToFourWheelCmd();
+    } 
+    else if(_experiment_on.get() == true)
+    {
+	for(int i=0; i<4; i++)
+	    refVel.target[i] = oVelocityRamp.getVal(status.index);
     }
 
     if(sync_prev != refVel.sync)
     {
     //    if(refVel.sync == true)
-	oRamp.reset();
+	oPositionControllerRamp.reset();
         firstRun = true;
     }
 
@@ -194,7 +211,7 @@ void PIVController::updateHook()
 
     for(int i=0; i<4; i++)
     {	
-	oPIV[i].setGains(oRamp.getVal(currIndex),asguardMotorConf.velI,asguardMotorConf.velP);
+	oPIV[i].setGains(oPositionControllerRamp.getVal(currIndex),asguardMotorConf.velI,asguardMotorConf.velP);
 	actVel[i] = (status.states[i].position - prevPos[i]) / ((currIndex - prevIndex) * 0.001);
         refPos[i] = refVelIntegrator[i].update(refVel.target[i]);
 	errPos[i] = refPos[i] - status.states[i].position;
@@ -283,10 +300,10 @@ void PIVController::setSyncRefPos(Status status)
     // wheel offset between -PI/5 and +PI/5
     //  0 being the double leg contact phase
     //  -PI/5 and +PI/5 being the leg vertical phase
-    wheel_offset[asguard::FRONT_LEFT ] = 0.0;
-    wheel_offset[asguard::FRONT_RIGHT] = asguardMotorConf._PI_5;
-    wheel_offset[asguard::REAR_LEFT  ] = asguardMotorConf._PI_5;
-    wheel_offset[asguard::REAR_RIGHT ] = 0.0;
+    wheel_offset[asguard::FRONT_LEFT ] = _offset_wheel_FL.get() * asguardMotorConf._PI_5;
+    wheel_offset[asguard::FRONT_RIGHT] = _offset_wheel_FR.get() * asguardMotorConf._PI_5;
+    wheel_offset[asguard::REAR_LEFT  ] = _offset_wheel_RL.get() * asguardMotorConf._PI_5;
+    wheel_offset[asguard::REAR_RIGHT ] = _offset_wheel_RR.get() * asguardMotorConf._PI_5;
 
     for(int i=0;i<4;i++)
     {
