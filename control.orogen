@@ -9,6 +9,8 @@ using_library "motor_controller"
 using_library "asguard"
 
 import_types_from "ControllerTypes.hpp"
+import_types_from "base/motion_command.h"
+
 
 task_context "Controller" do
     abstract
@@ -24,7 +26,7 @@ end
 task_context "SimpleController" do
     subclasses "Controller"
 
-    input_port('motion_command', 'controldev/MotionCommand').
+    input_port('motion_command', 'base/MotionCommand2D').
         doc('input command in rotation and translation. Requires a data connection type.').
         needs_data_connection
 end
@@ -32,7 +34,7 @@ end
 task_context "PIVController" do
     subclasses "Controller"
     
-    input_port('motion_command', 'controldev/MotionCommand').
+    input_port('motion_command', 'base/MotionCommand2D').
         doc('input command in rotation and translation. Requires a data connection type.').
         needs_data_connection
 

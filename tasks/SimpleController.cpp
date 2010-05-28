@@ -15,7 +15,7 @@ SimpleController::SimpleController(std::string const& name, TaskCore::TaskState 
 void SimpleController::updateHook()
 {
     // This is the user's command
-    controldev::MotionCommand cmd_in;
+    base::MotionCommand2D cmd_in;
     if (! _motion_command.read(cmd_in))
     {
         cmd_in.translation = 0;

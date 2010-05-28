@@ -25,7 +25,7 @@ namespace control {
 
 		controldev::FourWheelCommand 	refVel;
 		hbridge::SimpleCommand 		wmcmd;
-    		controldev::MotionCommand 	mcmd;
+    	base::MotionCommand2D 	mcmd;
 		motor_controller::Ramp 		oPositionControllerRamp;
 		motor_controller::Ramp 		oVelocityRamp;
 		
