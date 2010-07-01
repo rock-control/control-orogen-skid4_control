@@ -25,7 +25,7 @@ namespace control {
 
 		controldev::FourWheelCommand 	refVel;
 		hbridge::SimpleCommand 		wmcmd;
-    	base::MotionCommand2D 	mcmd;
+		base::MotionCommand2D 		mcmd;
 		motor_controller::Ramp 		oPositionControllerRamp;
 		motor_controller::Ramp 		oVelocityRamp;
 		
@@ -38,19 +38,12 @@ namespace control {
 		double errPos[4];
 		bool firstRun;
 		bool sync_prev;
-                bool calib;
 		SimpleIntegrator refVelIntegrator[4];	
 
-		// Data members for calibration
-		bool calibrated;
-		bool calib_forward;
-		double last_pos[4],init_pos[4],final_pos[4],mid_pos[4];
-		int still_motor[4];
-	
+		double mid_pos[4];
 
 		// Functions	
                 bool validInput(controldev::FourWheelCommand const& refVel) const;
-		bool calibrate(hbridge::Status status);
 		void setSyncRefPos(hbridge::Status status);
 		void motionToFourWheelCmd();
 		void getLegStances(hbridge::Status status, double* wheelPos);

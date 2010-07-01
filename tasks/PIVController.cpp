@@ -5,10 +5,10 @@
 #include <rtt/NonPeriodicActivity.hpp>
 
 #define SAMPLING_TIME   0.001
-#define CALIB_SPEED_PWM 0.12 // PWM speed during calibration
-#define CALIB_WAIT_TIME 300.0  // Calibration time in ticks
 #define RAMP_POS_TIME 10000.0  // Position controller ramp up time time in ticks
 #define RAMP_VEL_TIME 10000.0  // Position controller ramp up time time in ticks
+#define PWM_OUT_LIMIT 0.6 
+#define SPEED_LIMIT   7.0 
 
 using namespace control;
 using namespace hbridge;
@@ -46,7 +46,7 @@ bool PIVController::startHook()
 	oPIV[i].setFeedForwardGain(asguardMotorConf.velFF,asguardMotorConf.accFF);
 	oPIV[i].setVelSmoothingGain(asguardMotorConf.velSmooth);
 	oPIV[i].setSamplingTime(SAMPLING_TIME);
-	oPIV[i].setOutputLimits(-0.6,0.6);
+	oPIV[i].setOutputLimits(-PWM_OUT_LIMIT,PWM_OUT_LIMIT);
 	oPIV[i].setIntegratorWindupCoeff(asguardMotorConf.integralWindup);
 	oPIV[i].setPositionController(true);
     }
@@ -67,14 +67,9 @@ bool PIVController::startHook()
 	wmcmd.target[i] = 0;
     }
     firstRun = true;
-    sync_prev = false;
-    calib_forward = true;
-    calibrated = false;
-    for (int i = 0; i < 4; ++i)
-    {
-	still_motor[i] = 0;			//Initializing all the variables
-	last_pos[i] = 0;
-    }
+//    sync_prev = false;
+    for(int i=0;i<4;i++)
+	mid_pos[i] = 0.0;
     
     _status.clear();
     _four_wheel_command.clear();
@@ -87,7 +82,7 @@ bool PIVController::validInput(FourWheelCommand const& refVel) const
     {
 	if (refVel.mode[i] != MODE_SPEED)
 	    return false;
-	else if (fabs(refVel.target[i]) > 7.0)
+	else if (fabs(refVel.target[i]) > SPEED_LIMIT)
 	    return false;
     }
     return true;
@@ -108,16 +103,16 @@ void PIVController::motionToFourWheelCmd()
     refVel.target[asguard::REAR_RIGHT ] = fwd_velocity + differential;
 
     for(int i=0; i<4; i++)
-        if (refVel.target[i] > 7.0)
-                refVel.target[i] = 7.0;
-        else  if (refVel.target[i] < -7.0)
-                refVel.target[i] = -7.0;
+        if (refVel.target[i] > SPEED_LIMIT)
+                refVel.target[i] = SPEED_LIMIT;
+        else  if (refVel.target[i] < -SPEED_LIMIT)
+                refVel.target[i] = -SPEED_LIMIT;
     
     // Check if the robot is going straight
-    if(mcmd.rotation >= -0.01 && mcmd.rotation <= 0.01 && (mcmd.translation <= -0.05 || mcmd.translation >= 0.05) )
-	refVel.sync = true;
-    else
-	refVel.sync = false;
+//    if(mcmd.rotation >= -0.01 && mcmd.rotation <= 0.01 && (mcmd.translation <= -0.05 || mcmd.translation >= 0.05) )
+      refVel.sync = true;
+//    else
+//	refVel.sync = false;
 }
 
 void PIVController::updateHook()
@@ -128,45 +123,43 @@ void PIVController::updateHook()
     {
 	return;
     }  
-
-    if(_four_wheel_command.connected())
+    
+    if(_experiment_on.get() == true)
+    {
+	for(int i=0; i<4; i++)
+	    refVel.target[i] = oVelocityRamp.getVal(status.index);
+    }
+    else if(_four_wheel_command.connected())
 	_four_wheel_command.read (refVel);
     else if(_motion_command.connected())
     {
 	_motion_command.read(mcmd);
 	motionToFourWheelCmd();
     } 
-    else if(_experiment_on.get() == true)
-    {
-	for(int i=0; i<4; i++)
-	    refVel.target[i] = oVelocityRamp.getVal(status.index);
-    }
 
-    if(sync_prev != refVel.sync)
-    {
-    //    if(refVel.sync == true)
-	oPositionControllerRamp.reset();
-        firstRun = true;
-    }
+//    if(sync_prev != refVel.sync)
+//    {
+//    //    if(refVel.sync == true)
+//	oPositionControllerRamp.reset();
+//        firstRun = true;
+//    }
 
-    sync_prev = refVel.sync;
+//    sync_prev = refVel.sync;
 
-    if(!calibrated && refVel.sync) // Calibrate if not already done
-    {
-	/*if(!calibrate(status)) // If still not calibrated exit the function
-	{
-	    _simple_command.write(wmcmd);
-	    return;
-	}
-        else
-        {
-            firstRun = true; 
-        }*/
-        for(int i=0;i<4;i++)
-            mid_pos[i] = status.states[i].position;
-        calibrated = true;
-        firstRun = true;
-    }
+//    if(!calibrated && refVel.sync) // Calibrate if not already done
+//    {
+//	/*if(!calibrate(status)) // If still not calibrated exit the function
+//	{
+//	    _simple_command.write(wmcmd);
+//	    return;
+//	}
+//        else
+//        {
+//            firstRun = true; 
+//        }*/
+//        calibrated = true;
+//        firstRun = true;
+//    }
 
     // Validate the input. If it is not valid, stop the wheels
     if (! validInput(refVel))
@@ -177,6 +170,7 @@ void PIVController::updateHook()
 	    wmcmd.target[i] = 0;
 	}
 	firstRun = true;
+	wmcmd.time	= base::Time::now();
 	_simple_command.write(wmcmd);
 	return;
     }
@@ -185,6 +179,7 @@ void PIVController::updateHook()
     currIndex = status.index;
     if(firstRun)
     {
+	oPositionControllerRamp.reset();
         if(refVel.sync)
             setSyncRefPos(status);
 
@@ -203,11 +198,11 @@ void PIVController::updateHook()
 	return;
     }
 
-    if(refVel.sync)
-    {
-        for(int i=0;i<4;i++)
-            refVel.target[i] = refVel.target[asguard::FRONT_LEFT];
-    }
+//    if(refVel.sync)
+//    {
+//        for(int i=0;i<4;i++)
+//            refVel.target[i] = refVel.target[asguard::FRONT_LEFT];
+//    }
 
     for(int i=0; i<4; i++)
     {	
@@ -238,57 +233,6 @@ void PIVController::stopHook()
 // void PIVController::cleanupHook()
 // {
 // }
-
-bool PIVController::calibrate(Status status)
-{
-    bool reached_maximum = true;
-    for (int i = 0; i < 4; i++)
-    {
-	wmcmd.mode[i] = DM_PWM;
-	if (still_motor[i] < CALIB_WAIT_TIME)
-	{
-	    if(calib_forward)			// doing calibration in the forward direction
-		wmcmd.target[i] = CALIB_SPEED_PWM; //Slow PWM in the forward direction         		
-	    else
-		wmcmd.target[i] = -CALIB_SPEED_PWM; //Slow PWM in the reverse direction         		
-
-	    if (fabs(last_pos[i] - status.states[i].position) < 0.001)
-		still_motor[i]++;
-	    else
-		still_motor[i] = 0;
-
-	    reached_maximum = false;
-	    last_pos[i] = status.states[i].position;
-	}
-	else
-	    wmcmd.target[i] = 0;			
-    }
-
-    if (reached_maximum)
-    {
-	if (calib_forward)
-	{	
-	    for(int i=0;i<4;i++)	
-	    {
-		init_pos[i] = status.states[i].position; // store initial calibration data
-		still_motor[i] = 0; // Re-Initialize to Zero for the reverse direction calibration
-	    }
-	    calib_forward = false;
-	    reached_maximum = false;
-	}
-	else
-	{	
-	    for(int i=0;i<4;i++)
-		final_pos[i]= status.states[i].position;// store final calibration data
-
-	    for(int i =0;i<4;++i)
-		mid_pos[i] = (init_pos[i] + final_pos[i])/2;    // Mid position  for each wheel
-
-	    calibrated = true;
-	}
-    }
-    return calibrated;
-}
 
 
 void PIVController::setSyncRefPos(Status status)
