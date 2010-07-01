@@ -5,8 +5,8 @@
 #include <rtt/NonPeriodicActivity.hpp>
 
 #define SAMPLING_TIME   0.001
-#define RAMP_POS_TIME 10000.0  // Position controller ramp up time time in ticks
-#define RAMP_VEL_TIME 10000.0  // Position controller ramp up time time in ticks
+#define CONTROLLER_RAMP 10000.0  // Position controller ramp up time time in ticks
+#define RAMP_VEL_TIME 0.0  // Position controller ramp up time time in ticks
 #define PWM_OUT_LIMIT 0.6 
 #define SPEED_LIMIT   7.0 
 
@@ -53,7 +53,7 @@ bool PIVController::startHook()
 
     oPositionControllerRamp.setInitialData(0.0);
     oPositionControllerRamp.setFinalData(asguardMotorConf.posP);
-    oPositionControllerRamp.setDeltaTime(RAMP_POS_TIME); // 5 sec
+    oPositionControllerRamp.setDeltaTime(CONTROLLER_RAMP);
     oPositionControllerRamp.setType(0);  // Linear
 
     oVelocityRamp.setInitialData(0.0);
@@ -180,6 +180,7 @@ void PIVController::updateHook()
     if(firstRun)
     {
 	oPositionControllerRamp.reset();
+
         if(refVel.sync)
             setSyncRefPos(status);
 
@@ -211,6 +212,7 @@ void PIVController::updateHook()
         refPos[i] = refVelIntegrator[i].update(refVel.target[i]);
 	errPos[i] = refPos[i] - status.states[i].position;
 	wmcmd.target[i] = oPIV[i].update(actVel[i], refVel.target[i], errPos[i]);
+       
 	prevPos[i]  = status.states[i].position;
     }
     prevIndex = currIndex;
@@ -255,12 +257,14 @@ void PIVController::setSyncRefPos(Status status)
         del[i] = refPos[i] - mid_pos[i];	
         mul[i] = round(del[i] / asguardMotorConf._2PI_5);
         del[i] -=  mul[i] * asguardMotorConf._2PI_5;
-	
-	refPos[i] = 
-	    mid_pos[i] 
-	    + mul[i] * asguardMotorConf._2PI_5 
-	    + wheel_offset[i];
+
+	refPos[i] = mid_pos[i] + mul[i] * asguardMotorConf._2PI_5;
+        if(del[i] >= 0.0)        
+	    refPos[i] += wheel_offset[i];
+        else
+	    refPos[i] -= wheel_offset[i];
     }
+
 }
 
 // Returns the position of the legs
