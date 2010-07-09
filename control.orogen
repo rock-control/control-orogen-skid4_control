@@ -1,16 +1,14 @@
 name "control"
 version "0.1"
 
-using_toolkit "base"
-using_toolkit "controldev"
-using_toolkit "hbridge"
+import_types_from "base"
+import_types_from "controldev"
+import_types_from "hbridge"
 using_library "hbridge"
 using_library "motor_controller"
 using_library "asguard"
 
 import_types_from "ControllerTypes.hpp"
-import_types_from "base/motion_command.h"
-
 
 task_context "Controller" do
     abstract
