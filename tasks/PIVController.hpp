@@ -44,7 +44,7 @@ namespace control {
 
 		// Functions	
                 bool validInput(controldev::FourWheelCommand const& refVel) const;
-		void setSyncRefPos(hbridge::Status status);
+		void setRefPos(hbridge::Status status);
 		void motionToFourWheelCmd();
 		void getLegStances(hbridge::Status status, double* wheelPos);
 		void accFF(hbridge::Status status, double* wheelPos, double *wheelAccFF);

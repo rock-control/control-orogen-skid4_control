@@ -21,8 +21,10 @@ RTT::NonPeriodicActivity* PIVController::getNonPeriodicActivity()
     PIVController::PIVController(std::string const& name, TaskCore::TaskState initial_state)
 : PIVControllerBase(name, initial_state)
 {
+    _front_back_offset_on.set(false);
     _experiment_on.set(false);
     _forward_speed.set(0.0);
+    _offset_on.set(false);
     _offset_wheel_FL.set(0.0);
     _offset_wheel_FR.set(0.0);
     _offset_wheel_RL.set(0.0);
@@ -67,7 +69,6 @@ bool PIVController::startHook()
 	wmcmd.target[i] = 0;
     }
     firstRun = true;
-//    sync_prev = false;
     for(int i=0;i<4;i++)
 	mid_pos[i] = 0.0;
     
@@ -107,16 +108,12 @@ void PIVController::motionToFourWheelCmd()
                 refVel.target[i] = SPEED_LIMIT;
         else  if (refVel.target[i] < -SPEED_LIMIT)
                 refVel.target[i] = -SPEED_LIMIT;
-    
-    // Check if the robot is going straight
-//    if(mcmd.rotation >= -0.01 && mcmd.rotation <= 0.01 && (mcmd.translation <= -0.05 || mcmd.translation >= 0.05) )
-      refVel.sync = true;
-//    else
-//	refVel.sync = false;
 }
 
 void PIVController::updateHook()
 {
+    wmcmd.time	= base::Time::now();
+
     // This is the hbridge status
     Status status;
     if (! _status.read(status))
@@ -137,80 +134,46 @@ void PIVController::updateHook()
 	motionToFourWheelCmd();
     } 
 
-//    if(sync_prev != refVel.sync)
-//    {
-//    //    if(refVel.sync == true)
-//	oPositionControllerRamp.reset();
-//        firstRun = true;
-//    }
-
-//    sync_prev = refVel.sync;
-
-//    if(!calibrated && refVel.sync) // Calibrate if not already done
-//    {
-//	/*if(!calibrate(status)) // If still not calibrated exit the function
-//	{
-//	    _simple_command.write(wmcmd);
-//	    return;
-//	}
-//        else
-//        {
-//            firstRun = true; 
-//        }*/
-//        calibrated = true;
-//        firstRun = true;
-//    }
-
     // Validate the input. If it is not valid, stop the wheels
     if (! validInput(refVel))
     {
 	for (int i=0;i<4;i++)
 	{
 	    wmcmd.mode[i] 	= DM_PWM;
-	    wmcmd.target[i] = 0;
+	    wmcmd.target[i]	= 0;
 	}
 	firstRun = true;
-	wmcmd.time	= base::Time::now();
 	_simple_command.write(wmcmd);
 	return;
     }
 
-    wmcmd.time	= base::Time::now();
     currIndex = status.index;
     if(firstRun)
     {
 	oPositionControllerRamp.reset();
+        setRefPos(status);
 
-        if(refVel.sync)
-            setSyncRefPos(status);
-
-	firstRun = false;
-	prevIndex  = currIndex;
 	for(int i=0; i<4; i++)
 	{
             prevPos[i]  = status.states[i].position;
-            if(refVel.sync)
-                refVelIntegrator[i].init(SAMPLING_TIME,0.0,refPos[i]);
-            else
-                refVelIntegrator[i].init(SAMPLING_TIME,0.0,prevPos[i]);
+            refVelIntegrator[i].init(SAMPLING_TIME,0.0,refPos[i]);
 	    oPIV[i].reset();
 	    wmcmd.mode[i] 	= DM_PWM;
 	}
+
+	firstRun = false;
+	prevIndex  = currIndex;
 	return;
     }
-
-//    if(refVel.sync)
-//    {
-//        for(int i=0;i<4;i++)
-//            refVel.target[i] = refVel.target[asguard::FRONT_LEFT];
-//    }
 
     for(int i=0; i<4; i++)
     {	
 	oPIV[i].setGains(oPositionControllerRamp.getVal(currIndex),asguardMotorConf.velI,asguardMotorConf.velP);
+
 	actVel[i] = (status.states[i].position - prevPos[i]) / ((currIndex - prevIndex) * 0.001);
         refPos[i] = refVelIntegrator[i].update(refVel.target[i]);
 	errPos[i] = refPos[i] - status.states[i].position;
+
 	wmcmd.target[i] = oPIV[i].update(actVel[i], refVel.target[i], errPos[i]);
        
 	prevPos[i]  = status.states[i].position;
@@ -237,34 +200,79 @@ void PIVController::stopHook()
 // }
 
 
-void PIVController::setSyncRefPos(Status status)
+void PIVController::setRefPos(Status status)
 {
-    double del[4];  // Stores the delta position
-    int mul[4];  // Stores the integer multiples of 2PI/5
-    double wheel_offset[4];
-
-    // wheel offset between -PI/5 and +PI/5
-    //  0 being the double leg contact phase
-    //  -PI/5 and +PI/5 being the leg vertical phase
-    wheel_offset[asguard::FRONT_LEFT ] = _offset_wheel_FL.get() * asguardMotorConf._PI_5;
-    wheel_offset[asguard::FRONT_RIGHT] = _offset_wheel_FR.get() * asguardMotorConf._PI_5;
-    wheel_offset[asguard::REAR_LEFT  ] = _offset_wheel_RL.get() * asguardMotorConf._PI_5;
-    wheel_offset[asguard::REAR_RIGHT ] = _offset_wheel_RR.get() * asguardMotorConf._PI_5;
-
     for(int i=0;i<4;i++)
     {
-        refPos[i] = status.states[i].position;
-        del[i] = refPos[i] - mid_pos[i];	
-        mul[i] = round(del[i] / asguardMotorConf._2PI_5);
-        del[i] -=  mul[i] * asguardMotorConf._2PI_5;
-
-	refPos[i] = mid_pos[i] + mul[i] * asguardMotorConf._2PI_5;
-        if(del[i] >= 0.0)        
-	    refPos[i] += wheel_offset[i];
-        else
-	    refPos[i] -= wheel_offset[i];
+	refPos[i] = status.states[i].position;
     }
 
+    if(!_front_back_offset_on.get() && !_offset_on.get())
+    {
+	return;
+    }
+
+    double del[4];  // Stores the delta position
+    int    mul[4];  // Stores the integer multiples of 2PI/5
+    double wheel_offset[4];
+
+    if(_offset_on.get())
+    {
+	// wheel offset between -PI/5 and +PI/5
+	//  0 being the double leg contact phase
+	//  -PI/5 and +PI/5 being the leg vertical phase
+	wheel_offset[asguard::FRONT_LEFT ] = _offset_wheel_FL.get() * asguardMotorConf._PI_5;
+	wheel_offset[asguard::FRONT_RIGHT] = _offset_wheel_FR.get() * asguardMotorConf._PI_5;
+	wheel_offset[asguard::REAR_LEFT  ] = _offset_wheel_RL.get() * asguardMotorConf._PI_5;
+	wheel_offset[asguard::REAR_RIGHT ] = _offset_wheel_RR.get() * asguardMotorConf._PI_5;
+
+	for(int i=0;i<4;i++)
+	{
+	    del[i] = refPos[i] - mid_pos[i];	
+	    mul[i] = round(del[i] / asguardMotorConf._2PI_5);
+	    del[i] -=  mul[i] * asguardMotorConf._2PI_5;
+
+	    refPos[i] = mid_pos[i] + mul[i] * asguardMotorConf._2PI_5;
+	    if(del[i] >= 0.0)        
+		refPos[i] += wheel_offset[i];
+	    else
+		refPos[i] -= wheel_offset[i];
+	}
+    } 
+    else if(_front_back_offset_on.get())
+    {
+	for(int i=0;i<4;i++)
+	{
+	    del[i] = refPos[i] - mid_pos[i];	
+	    mul[i] = round(del[i] / asguardMotorConf._2PI_5);
+	    del[i] -=  mul[i] * asguardMotorConf._2PI_5;
+//	    refPos[i] = mid_pos[i] + mul[i] * asguardMotorConf._2PI_5;
+	}
+
+	double offset = abs(del[asguard::FRONT_LEFT] - del[asguard::REAR_LEFT ]) - asguardMotorConf._PI_5;
+	if(offset > 0)        
+	{
+	    refPos[asguard::FRONT_LEFT] += 0.5 * offset;
+	    refPos[asguard::REAR_LEFT]  -= 0.5 * offset;
+	}
+	else
+	{
+	    refPos[asguard::FRONT_LEFT] -= 0.5 * offset;
+	    refPos[asguard::REAR_LEFT]  += 0.5 * offset;
+	}
+	
+	offset = abs(del[asguard::FRONT_RIGHT] - del[asguard::REAR_RIGHT ]) - asguardMotorConf._PI_5;
+	if(offset > 0)        
+	{
+	    refPos[asguard::FRONT_RIGHT] += 0.5 * offset;
+	    refPos[asguard::REAR_RIGHT]  -= 0.5 * offset;
+	}
+	else
+	{
+	    refPos[asguard::FRONT_RIGHT] -= 0.5 * offset;
+	    refPos[asguard::REAR_RIGHT]  += 0.5 * offset;
+	}
+    }
 }
 
 // Returns the position of the legs

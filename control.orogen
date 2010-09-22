@@ -39,11 +39,17 @@ task_context "PIVController" do
     input_port('four_wheel_command', 'controldev::FourWheelCommand').
         doc('Reference velocity for PIV controller')
 
+    property("front_back_offset_on", "bool").
+        doc('Sets a pi/5 offset between front and back wheels')
+
     property("experiment_on", "bool").
         doc('Runs the forward run experiment')
 
     property("forward_speed", "double").
         doc('Sets the forward run speed')
+
+    property("offset_on", "bool").
+        doc('Turns on the wheels offsets')
 
     property("offset_wheel_FL", "double").
         doc('Offset for Front Left wheel -100.0 to +100.0')
