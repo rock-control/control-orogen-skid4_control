@@ -1,11 +1,8 @@
+/* Generated from orogen/lib/orogen/templates/tasks/Task.cpp */
+
 #include "SimpleController.hpp"
-#include <HBridge.hpp>
 
-
-using namespace control;
-using namespace RTT;
-
-
+using namespace skid4_control;
 
 SimpleController::SimpleController(std::string const& name, TaskCore::TaskState initial_state)
     : SimpleControllerBase(name, initial_state)
@@ -14,49 +11,57 @@ SimpleController::SimpleController(std::string const& name, TaskCore::TaskState 
 
 void SimpleController::updateHook()
 {
+    SimpleControllerBase::updateHook();
+
     // This is the user's command
     base::MotionCommand2D cmd_in;
-    if (! _motion_command.read(cmd_in))
+    if (_motion_command.read(cmd_in) == RTT::NoData)
     {
         cmd_in.translation = 0;
         cmd_in.rotation    = 0;
     }
 
-    // This is the hbridge status
-    // hbridge::Status status;
-    // if (! _status.read(status))
-    // {
-    //     log(Error) 
-    //         << "no input status. Did you use a data connection type for the status input port ?"
-    //         << endlog();
-    //     return error();
-    // }
-
-    // Finally, this is the command we have to send to the hbridge at the end
-    // of the updateHook()
-    hbridge::SimpleCommand cmd_out;
-    
     // The output of this controller is a speed command.
-    cmd_out.mode[0] = cmd_out.mode[1] =
-        cmd_out.mode[2] = cmd_out.mode[3] = hbridge::DM_SPEED;
+    m_cmd.mode[0] = m_cmd.mode[1] =
+        m_cmd.mode[2] = m_cmd.mode[3] = base::actuators::DM_SPEED;
 
-    double fwd_velocity = cmd_in.translation / asguardConf.wheelRadiusAvg;
-    double differential = cmd_in.rotation * asguardConf.trackWidth / asguardConf.wheelRadiusAvg;
-    cmd_out.target[hbridge::MOTOR_FRONT_LEFT]  = fwd_velocity - differential;
-    cmd_out.target[hbridge::MOTOR_REAR_LEFT]   = fwd_velocity - differential;
-    cmd_out.target[hbridge::MOTOR_FRONT_RIGHT] = fwd_velocity + differential;
-    cmd_out.target[hbridge::MOTOR_REAR_RIGHT]  = fwd_velocity + differential;
+    double fwd_velocity = cmd_in.translation / _wheel_radius.get();
+    double differential = cmd_in.rotation * _track_width.get() / _wheel_radius.get();
+    m_cmd.target[base::actuators::WHEEL4_FRONT_LEFT]  = fwd_velocity - differential;
+    m_cmd.target[base::actuators::WHEEL4_REAR_LEFT]   = fwd_velocity - differential;
+    m_cmd.target[base::actuators::WHEEL4_FRONT_RIGHT] = fwd_velocity + differential;
+    m_cmd.target[base::actuators::WHEEL4_REAR_RIGHT]  = fwd_velocity + differential;
+    m_cmd.time = base::Time::now();
 
-    _simple_command.write(cmd_out);
+    _simple_command.write(m_cmd);
 }
 
+/// The following lines are template definitions for the various state machine
+// hooks defined by Orocos::RTT. See SimpleController.hpp for more detailed
+// documentation about them.
+
+// bool SimpleController::configureHook()
+// {
+//     if (! SimpleControllerBase::configureHook())
+//         return false;
+//     return true;
+// }
+// bool SimpleController::startHook()
+// {
+//     if (! SimpleControllerBase::startHook())
+//         return false;
+//     return true;
+// }
 // void SimpleController::errorHook()
 // {
+//     SimpleControllerBase::errorHook();
 // }
 // void SimpleController::stopHook()
 // {
+//     SimpleControllerBase::stopHook();
 // }
 // void SimpleController::cleanupHook()
 // {
+//     SimpleControllerBase::cleanupHook();
 // }
 

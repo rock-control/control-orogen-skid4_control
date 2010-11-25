@@ -1,0 +1,40 @@
+name "skid4_control"
+version "0.1"
+
+import_types_from "base"
+
+task_context "Controller" do
+    abstract
+
+    input_port("status", "base/actuators/Status").
+        doc("motor data")
+
+    output_port("simple_command", "base/actuators/Command").
+        doc("output command for the hbridges. A data connection type is recommended")
+end
+
+# The simplest four-wheel, skid-steering controller you can get
+task_context "SimpleController" do
+    subclasses "Controller"
+
+    property("wheel_radius", "double").
+        doc("the radius of a wheel, in meters")
+    property("track_width", "double").
+        doc("the distance between the two wheels of the same axis, in meters")
+
+    input_port('motion_command', 'base/MotionCommand2D').
+        doc('input command in rotation and translation. Requires a data connection type.')
+end
+
+
+if has_typekit?('controldev')
+    import_types_from "controldev"
+    # A four-wheel controller that controls each wheel separately
+    task_context "FourWheelController" do
+        subclasses "Controller"
+
+        input_port('four_wheel_command', 'controldev::FourWheelCommand').
+            doc('Reference velocity for PIV controller')
+    end
+end
+

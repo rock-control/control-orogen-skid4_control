@@ -1,27 +1,21 @@
-#ifndef CONTROL_CONTROLLER_TASK_HPP
-#define CONTROL_CONTROLLER_TASK_HPP
+/* Generated from orogen/lib/orogen/templates/tasks/Task.hpp */
 
-#include "control/ControllerBase.hpp"
+#ifndef SKID4_CONTROL_CONTROLLER_TASK_HPP
+#define SKID4_CONTROL_CONTROLLER_TASK_HPP
 
+#include "skid4_control/ControllerBase.hpp"
 
-namespace RTT
-{
-    class NonPeriodicActivity;
-}
-
-
-namespace control {
+namespace skid4_control {
     class Controller : public ControllerBase
     {
 	friend class ControllerBase;
+
     protected:
-    
-    
+        base::actuators::Status  m_status;
+        base::actuators::Command  m_cmd;
 
     public:
-        Controller(std::string const& name = "control::Controller", TaskCore::TaskState initial_state = Stopped);
-
-        RTT::NonPeriodicActivity* getNonPeriodicActivity();
+        Controller(std::string const& name = "skid4_control::Controller", TaskCore::TaskState initial_state = Stopped);
 
         /** This hook is called by Orocos when the state machine transitions
          * from PreOperational to Stopped. If it returns false, then the
@@ -43,26 +37,23 @@ namespace control {
          * stay in Stopped. Otherwise, it goes into Running and updateHook()
          * will be called.
          */
-        // bool startHook();
+        bool startHook();
 
         /** This hook is called by Orocos when the component is in the Running
          * state, at each activity step. Here, the activity gives the "ticks"
-         * when the hook should be called. See README.txt for different
-         * triggering options.
+         * when the hook should be called.
          *
-         * The warning(), error() and fatal() calls, when called in this hook,
-         * allow to get into the associated RunTimeWarning, RunTimeError and
+         * The error(), exception() and fatal() calls, when called in this hook,
+         * allow to get into the associated RunTimeError, Exception and
          * FatalError states. 
          *
-         * In the first case, updateHook() is still called, and recovered()
-         * allows you to go back into the Running state.  In the second case,
-         * the errorHook() will be called instead of updateHook() and in the
-         * third case the component is stopped and resetError() needs to be
-         * called before starting it again.
-         *
+         * In the first case, updateHook() is still called, and recover() allows
+         * you to go back into the Running state.  In the second case, the
+         * errorHook() will be called instead of updateHook(). In Exception, the
+         * component is stopped and recover() needs to be called before starting
+         * it again. Finally, FatalError cannot be recovered.
          */
         // void updateHook();
-        
 
         /** This hook is called by Orocos when the component is in the
          * RunTimeError state, at each activity step. See the discussion in

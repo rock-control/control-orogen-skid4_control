@@ -1,18 +1,15 @@
+/* Generated from orogen/lib/orogen/templates/tasks/Task.cpp */
+
 #include "FourWheelController.hpp"
 
-#include <rtt/NonPeriodicActivity.hpp>
-
-using namespace control;
-
-
-RTT::NonPeriodicActivity* FourWheelController::getNonPeriodicActivity()
-{ return dynamic_cast< RTT::NonPeriodicActivity* >(getActivity().get()); }
-
+using namespace skid4_control;
 
 FourWheelController::FourWheelController(std::string const& name, TaskCore::TaskState initial_state)
     : FourWheelControllerBase(name, initial_state)
 {
 }
+
+
 
 /// The following lines are template definitions for the various state machine
 // hooks defined by Orocos::RTT. See FourWheelController.hpp for more detailed
@@ -20,42 +17,35 @@ FourWheelController::FourWheelController(std::string const& name, TaskCore::Task
 
 // bool FourWheelController::configureHook()
 // {
+//     if (! FourWheelControllerBase::configureHook())
+//         return false;
+//     return true;
+// }
+// bool FourWheelController::startHook()
+// {
+//     if (! FourWheelControllerBase::startHook())
+//         return false;
+// 
 //     return true;
 // }
 
-bool FourWheelController::startHook()
-{
-    for(int i = 0; i < 4 ; i++)
-    {
-        wmcmd.mode[i] = hbridge::DM_PWM;
-        wmcmd.target[i] = 0;
-    }
-    return true;
-}
-
 void FourWheelController::updateHook()
 {
-        controldev::FourWheelCommand oInputCmd;
-        if (!_four_wheel_command.read(oInputCmd))
-        {
-            // No data on input, send last command on output
-            _simple_command.write(wmcmd);
-            return;
-        }
+    controldev::FourWheelCommand oInputCmd;
+    if (_four_wheel_command.read(oInputCmd) == RTT::NoData)
+    {
+        // No data on input, send last command on output
+        _simple_command.write(m_cmd);
+        return;
+    }
 
-        for (int i = 0; i < 4; ++i)
-        {
-            hbridge::DRIVE_MODE hbridge_mode = hbridge::DM_UNINITIALIZED;
-            if (oInputCmd.mode[i] == controldev::MODE_PWM)
-                hbridge_mode = hbridge::DM_PWM;
-            else if (oInputCmd.mode[i] == controldev::MODE_SPEED)
-                hbridge_mode = hbridge::DM_SPEED;
+    for (int i = 0; i < 4; ++i)
+    {
+        m_cmd.mode[i]   = oInputCmd.mode[i];
+        m_cmd.target[i] = oInputCmd.target[i];
+    }
 
-            wmcmd.mode[i] = hbridge_mode;
-            wmcmd.target[i] = oInputCmd.target[i];
-        }
-
-	_simple_command.write(wmcmd);
+    _simple_command.write(m_cmd);
 }
 
 // void FourWheelController::errorHook()
@@ -65,10 +55,11 @@ void FourWheelController::stopHook()
 {
     for(int i = 0; i < 4 ; i++)
     {
-        wmcmd.mode[i] = hbridge::DM_PWM;
-        wmcmd.target[i] = 0;
+        m_cmd.mode[i] = base::actuators::DM_PWM;
+        m_cmd.target[i] = 0;
     }
-    _simple_command.write(wmcmd);
+    m_cmd.time = base::Time::now();
+    _simple_command.write(m_cmd);
 }
 // void FourWheelController::cleanupHook()
 // {
