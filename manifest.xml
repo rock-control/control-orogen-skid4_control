@@ -1,7 +1,16 @@
 <?xml version="1.0"?>
 <package>
-  <depend package="control/motor_controller"/>
-  <depend package="drivers/orogen/controldev" optiona="1"/>
-  <depend package="base/types"/>
-  <depend package="orogen"/>
+    <description brief="Simple controllers for four-wheeled, skid-steered
+        systems">
+    </description>
+    <author>Ajish Babu/ajish.babu@dfki.de</author>
+    <copyright>
+        DFKI/robotik@dfki.de
+    </copyright>
+    <license>LGPL v2 or later</license>
+
+    <depend package="control/motor_controller"/>
+    <depend package="drivers/orogen/controldev" optiona="1"/>
+    <depend package="base/types"/>
+    <depend package="orogen"/>
 </package>
