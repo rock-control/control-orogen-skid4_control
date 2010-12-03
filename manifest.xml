@@ -10,7 +10,7 @@
     <license>LGPL v2 or later</license>
 
     <depend package="control/motor_controller"/>
-    <depend package="drivers/orogen/controldev" optiona="1"/>
+    <depend package="drivers/orogen/controldev" optional="1"/>
     <depend package="base/types"/>
     <depend package="orogen"/>
 </package>
