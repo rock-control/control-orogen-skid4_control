@@ -9,6 +9,18 @@ SimpleController::SimpleController(std::string const& name, TaskCore::TaskState 
 {
 }
 
+bool SimpleController::startHook()
+{
+    m_radius = _wheel_radius.get();
+    m_track_width = _track_width.get();
+    if (m_radius <= 0 || m_track_width <= 0)
+    {
+        RTT::log(RTT::Error) << "wrong radius and/or track_width parameters" << RTT::endlog();
+        return false;
+    }
+    return true;
+}
+
 void SimpleController::updateHook()
 {
     SimpleControllerBase::updateHook();

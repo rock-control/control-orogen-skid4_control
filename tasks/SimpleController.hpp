@@ -9,13 +9,9 @@ namespace skid4_control {
     class SimpleController : public SimpleControllerBase
     {
 	friend class SimpleControllerBase;
-    protected:
 
-        /** We use this member to read the ports. This is so because Command
-         * uses a std::vector, and we must not have this std::vector resized
-         * in any way (it would break real-timeness)
-         */
-        base::actuators::Command cmd_out;
+        double m_radius;
+        double m_track_width;
 
     public:
         SimpleController(std::string const& name = "skid4_control::SimpleController", TaskCore::TaskState initial_state = Stopped);
@@ -40,7 +36,7 @@ namespace skid4_control {
          * stay in Stopped. Otherwise, it goes into Running and updateHook()
          * will be called.
          */
-        // bool startHook();
+        bool startHook();
 
         /** This hook is called by Orocos when the component is in the Running
          * state, at each activity step. Here, the activity gives the "ticks"
