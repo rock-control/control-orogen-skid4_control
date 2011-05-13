@@ -11,6 +11,19 @@ Controller::Controller(std::string const& name, TaskCore::TaskState initial_stat
     m_cmd.resize(4);
 }
 
+Controller::Controller(std::string const& name, RTT::ExecutionEngine* engine, TaskCore::TaskState initial_state)
+    : ControllerBase(name, engine, initial_state)
+{
+    m_status.resize(4);
+    m_cmd.resize(4);
+}
+
+Controller::~Controller()
+{
+}
+
+
+
 /// The following lines are template definitions for the various state machine
 // hooks defined by Orocos::RTT. See Controller.hpp for more detailed
 // documentation about them.
