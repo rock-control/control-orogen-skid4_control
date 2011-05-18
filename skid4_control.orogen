@@ -40,6 +40,32 @@ task_context "ConstantSpeedController" do
         doc('input command in rotation and translation. Requires a data connection type.')
 end
 
+task_context "SoftTurnController" do
+    subclasses "Controller"
+
+    needs_configuration
+
+    property("wheel_radius", "double").
+        doc("the radius of a wheel, in meters")
+    property("track_width", "double").
+        doc("the distance between the two wheels of the same axis, in meters")
+
+    property("turnSpeed", "double", 0.8)
+    property("translationalSpeed", "double", 0.1)
+    property("turnVariance", "double", 0.1)
+
+    property("P", "double", 0.0)
+    property("I", "double", 0.0)
+    property("D", "double", 0.0)
+    property("MinMax", "double", 0.0)
+    property("N", "double", 0.0)
+    property("B", "double", 1.0)
+    property("Tt", "double", -1.0)
+
+
+    input_port('motion_command', 'base/MotionCommand2D').
+        doc('input command in rotation and translation. Requires a data connection type.')
+end
 
 if has_typekit?('controldev')
     import_types_from "controldev"
