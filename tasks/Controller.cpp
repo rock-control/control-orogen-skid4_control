@@ -22,7 +22,16 @@ Controller::~Controller()
 {
 }
 
-
+void Controller::stopMotors()
+{
+   for (int i = 0; i < 4 ; i++)
+   {
+       m_cmd.mode[i] = base::actuators::DM_PWM;
+       m_cmd.target[i] = 0;
+   }
+   
+   _simple_command.write(m_cmd);
+}
 
 /// The following lines are template definitions for the various state machine
 // hooks defined by Orocos::RTT. See Controller.hpp for more detailed

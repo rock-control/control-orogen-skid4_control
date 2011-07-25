@@ -13,6 +13,11 @@ namespace skid4_control {
     protected:
         base::actuators::Status  m_status;
         base::actuators::Command  m_cmd;
+	/**
+	 * Set m_cmd to zero and PWM mode.
+	 * also write m_cmd on the simple_command port
+	 **/
+	void stopMotors();
 
     public:
         Controller(std::string const& name = "skid4_control::Controller", TaskCore::TaskState initial_state = Stopped);
