@@ -26,6 +26,20 @@ task_context "SimpleController" do
         doc('input command in rotation and translation. Requires a data connection type.')
 end
 
+# A controller that applies constant speed to all 4 wheels
+# It can't turn the robot and is only usefull for datagathering
+task_context "ConstantSpeedController" do
+    subclasses "Controller"
+
+    needs_configuration
+
+    property("speed", "double", 0.0).
+        doc("speed that is applied to the motors")
+
+    input_port('motion_command', 'base/MotionCommand2D').
+        doc('input command in rotation and translation. Requires a data connection type.')
+end
+
 
 if has_typekit?('controldev')
     import_types_from "controldev"
