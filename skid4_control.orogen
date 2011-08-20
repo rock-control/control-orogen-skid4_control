@@ -1,6 +1,7 @@
 name "skid4_control"
 version "0.1"
 
+using_library 'motor_controller'
 import_types_from "base"
 
 task_context "Controller" do
