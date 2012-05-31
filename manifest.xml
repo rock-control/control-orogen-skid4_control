@@ -13,4 +13,5 @@
     <depend package="drivers/orogen/controldev" optional="1"/>
     <depend package="base/types"/>
     <depend package="orogen"/>
+  <tags>stable</tags>
 </package>
