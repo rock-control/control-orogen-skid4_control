@@ -4,7 +4,7 @@
 #define SKID4_CONTROL_SOFTTURNCONTROLLER_TASK_HPP
 
 #include "skid4_control/SoftTurnControllerBase.hpp"
-#include <PID.hpp>
+#include <motor_controller/PID.hpp>
 
 namespace skid4_control {
     class SoftTurnController : public SoftTurnControllerBase

@@ -1,7 +1,7 @@
 /* Generated from orogen/lib/orogen/templates/tasks/Task.cpp */
 
 #include "SoftTurnController.hpp"
-#include "PID.hpp"
+#include "motor_controller/PID.hpp"
 
 using namespace skid4_control;
 
