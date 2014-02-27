@@ -7,6 +7,12 @@ import_types_from "base"
 task_context "Controller" do
     abstract
 
+    input_port("status_samples", "base/samples/Joints").
+        doc("status data of the motor driver")
+
+    output_port("command", "base/commands/Joints").
+        doc("output command for the motor drivers. A data connection type is recommended")
+
     input_port("status", "base/actuators/Status").
         doc("motor data")
 
@@ -18,10 +24,15 @@ end
 task_context "SimpleController" do
     subclasses "Controller"
 
+    needs_configuration
+
     property("wheel_radius", "double").
         doc("the radius of a wheel, in meters")
     property("track_width", "double").
         doc("the distance between the two wheels of the same axis, in meters")
+
+    property("left_wheel_names", "std::vector<std::string>")
+    property("right_wheel_names", "std::vector<std::string>")
 
     input_port('motion_command', 'base/MotionCommand2D').
         doc('input command in rotation and translation. Requires a data connection type.')

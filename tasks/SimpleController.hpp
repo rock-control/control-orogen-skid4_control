@@ -4,6 +4,7 @@
 #define SKID4_CONTROL_SIMPLECONTROLLER_TASK_HPP
 
 #include "skid4_control/SimpleControllerBase.hpp"
+#include <base/commands/Joints.hpp>
 
 namespace skid4_control {
     class SimpleController : public SimpleControllerBase
@@ -11,11 +12,27 @@ namespace skid4_control {
 	friend class SimpleControllerBase;
 
         double m_radius;
-        double m_track_width;
+        double m_trackWidth;
 
+        std::vector<size_t> m_rightIndexes;
+        std::vector<size_t> m_leftIndexes;
+        
+        base::commands::Joints m_jointCmd;
+        
     public:
-        SimpleController(std::string const& name = "skid4_control::SimpleController", TaskCore::TaskState initial_state = Stopped);
+        /** TaskContext constructor for SimpleController
+         * \param name Name of the task. This name needs to be unique to make it identifiable via nameservices.
+         * \param initial_state The initial TaskState of the TaskContext. Default is Stopped state.
+         */
+        SimpleController(std::string const& name = "skid4_control::SimpleController");
 
+        /** TaskContext constructor for SimpleController 
+         * \param name Name of the task. This name needs to be unique to make it identifiable for nameservices. 
+         * \param engine The RTT Execution engine to be used for this task, which serialises the execution of all commands, programs, state machines and incoming events for a task. 
+         * 
+         */
+        SimpleController(std::string const& name, RTT::ExecutionEngine* engine);
+        
         /** This hook is called by Orocos when the state machine transitions
          * from PreOperational to Stopped. If it returns false, then the
          * component will stay in PreOperational. Otherwise, it goes into
@@ -29,14 +46,14 @@ namespace skid4_control {
          *     ...
          *   end
          */
-        // bool configureHook();
+        bool configureHook();
 
         /** This hook is called by Orocos when the state machine transitions
          * from Stopped to Running. If it returns false, then the component will
          * stay in Stopped. Otherwise, it goes into Running and updateHook()
          * will be called.
          */
-        bool startHook();
+//         bool startHook();
 
         /** This hook is called by Orocos when the component is in the Running
          * state, at each activity step. Here, the activity gives the "ticks"
