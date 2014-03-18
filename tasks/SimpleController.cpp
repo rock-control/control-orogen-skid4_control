@@ -86,6 +86,8 @@ void SimpleController::updateHook()
         m_jointCmd.elements[*it].speed = fwd_velocity + differential;
     }
     
+    m_jointCmd.time = m_cmd.time;
+    
     _command.write(m_jointCmd);
     
 }
