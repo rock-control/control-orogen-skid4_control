@@ -57,7 +57,7 @@ void SimpleController::updateHook()
 
     // This is the user's command
     base::MotionCommand2D cmd_in;
-    if (_motion_command.read(cmd_in) == RTT::NoData)
+    if (_motion_command.readNewest(cmd_in) == RTT::NoData)
     {
         cmd_in.translation = 0;
         cmd_in.rotation    = 0;
@@ -89,5 +89,4 @@ void SimpleController::updateHook()
     m_jointCmd.time = m_cmd.time;
     
     _command.write(m_jointCmd);
-    
 }
