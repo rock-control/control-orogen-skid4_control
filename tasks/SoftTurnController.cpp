@@ -2,6 +2,8 @@
 
 #include "SoftTurnController.hpp"
 #include "motor_controller/PID.hpp"
+#include <base/actuators/vehicles.h>
+#include <base/commands/Motion2D.hpp>
 
 using namespace skid4_control;
 
@@ -119,7 +121,7 @@ void SoftTurnController::updateHook()
 	return;
 
     // This is the user's command
-    base::MotionCommand2D cmd_in;
+    base::commands::Motion2D cmd_in;
     if (_motion_command.readNewest(cmd_in, true) == RTT::NoData)
     {
         cmd_in.translation = 0;

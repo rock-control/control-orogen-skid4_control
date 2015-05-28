@@ -1,6 +1,7 @@
 /* Generated from orogen/lib/orogen/templates/tasks/Task.cpp */
 
 #include "ConstantSpeedController.hpp"
+#include <base/commands/Motion2D.hpp>
 
 namespace skid4_control {
 
@@ -47,7 +48,7 @@ bool ConstantSpeedController::configureHook()
 void ConstantSpeedController::updateHook()
 {
     ConstantSpeedControllerBase::updateHook();
-    base::MotionCommand2D cmd_in;
+    base::commands::Motion2D cmd_in;
     if(_motion_command.readNewest(cmd_in) == RTT::NoData)
     {
 	//no input connected, send zero command

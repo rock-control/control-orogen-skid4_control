@@ -1,6 +1,8 @@
 /* Generated from orogen/lib/orogen/templates/tasks/Task.cpp */
 
 #include "SimpleController.hpp"
+#include <base/commands/Motion2D.hpp>
+#include <base/actuators/vehicles.h>
 
 using namespace skid4_control;
 
@@ -56,7 +58,7 @@ void SimpleController::updateHook()
     SimpleControllerBase::updateHook();
 
     // This is the user's command
-    base::MotionCommand2D cmd_in;
+    base::commands::Motion2D cmd_in;
     if (_motion_command.readNewest(cmd_in) == RTT::NoData)
     {
         cmd_in.translation = 0;
