@@ -49,7 +49,9 @@ bool SimpleController::configureHook()
         m_rightIndexes.push_back(curIndex);
         curIndex++;        
     }
-    
+
+    // The output of this controller is a speed command.
+    m_cmd.mode[0] = m_cmd.mode[1] = m_cmd.mode[2] = m_cmd.mode[3] = base::actuators::DM_SPEED;
     return true;    
 }
 
@@ -64,10 +66,6 @@ void SimpleController::updateHook()
         cmd_in.translation = 0;
         cmd_in.rotation    = 0;
     }
-
-    // The output of this controller is a speed command.
-    m_cmd.mode[0] = m_cmd.mode[1] =
-        m_cmd.mode[2] = m_cmd.mode[3] = base::actuators::DM_SPEED;
 
     double fwd_velocity = cmd_in.translation / m_radius;
     double differential = cmd_in.rotation * m_trackWidth / m_radius;
