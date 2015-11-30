@@ -61,10 +61,31 @@ void SimpleController::updateHook()
 
     // This is the user's command
     base::commands::Motion2D cmd_in;
-    if (_motion_command.readNewest(cmd_in) == RTT::NoData)
+    switch(_motion_command.readNewest(cmd_in))
     {
+    // no data connection
+    case RTT::NoData:
+        // send stop command
         cmd_in.translation = 0;
-        cmd_in.rotation    = 0;
+        cmd_in.rotation  = 0;
+        break;
+
+    // old data
+    case RTT::OldData:
+        if((base::Time::now()-m_cmd.time).toSeconds() > _timeout.value())
+        {
+            // send stop command
+            cmd_in.translation = 0;
+            cmd_in.rotation  = 0;
+        }
+        break;
+
+    // new data are available
+    case RTT::NewData:
+        // set timestamp
+        m_cmd.time = base::Time::now();
+        m_jointCmd.time = m_cmd.time;
+        break;
     }
 
     double fwd_velocity = cmd_in.translation / m_radius;
@@ -73,20 +94,12 @@ void SimpleController::updateHook()
     m_cmd.target[base::actuators::WHEEL4_REAR_LEFT]   = fwd_velocity - differential;
     m_cmd.target[base::actuators::WHEEL4_FRONT_RIGHT] = fwd_velocity + differential;
     m_cmd.target[base::actuators::WHEEL4_REAR_RIGHT]  = fwd_velocity + differential;
-    m_cmd.time = base::Time::now();
-
-    _simple_command.write(m_cmd);
-
-    for(std::vector<size_t>::const_iterator it = m_leftIndexes.begin(); it != m_leftIndexes.end();it++)
-    {
+    for(std::vector<size_t>::const_iterator it = m_leftIndexes.begin(); it != m_leftIndexes.end();++it)
         m_jointCmd.elements[*it].speed = fwd_velocity - differential;
-    }
-    for(std::vector<size_t>::const_iterator it = m_rightIndexes.begin(); it != m_rightIndexes.end();it++)
-    {
+    for(std::vector<size_t>::const_iterator it = m_rightIndexes.begin(); it != m_rightIndexes.end();++it)
         m_jointCmd.elements[*it].speed = fwd_velocity + differential;
-    }
-    
-    m_jointCmd.time = m_cmd.time;
-    
+
+    // write data to output ports
+    _simple_command.write(m_cmd);
     _command.write(m_jointCmd);
 }

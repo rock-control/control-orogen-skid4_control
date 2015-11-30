@@ -26,6 +26,9 @@ task_context "SimpleController" do
 
     needs_configuration
 
+    property("timeout", "double",0.1).
+        doc("Timeout in seconds after a stop command is emitted if no new motion commands are available.")
+
     property("wheel_radius", "double").
         doc("the radius of a wheel, in meters")
     property("track_width", "double").
