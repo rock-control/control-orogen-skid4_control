@@ -37,7 +37,7 @@ task_context "SimpleController" do
     property("left_wheel_names", "std::vector<std::string>")
     property("right_wheel_names", "std::vector<std::string>")
 
-    input_port('motion_command', 'base/MotionCommand2D').
+    input_port('motion_command', 'base/commands/Motion2D').
         doc('input command in rotation and translation. Requires a data connection type.')
 end
 
@@ -51,7 +51,7 @@ task_context "ConstantSpeedController" do
     property("speed", "double", 0.0).
         doc("speed that is applied to the motors")
 
-    input_port('motion_command', 'base/MotionCommand2D').
+    input_port('motion_command', 'base/commands/Motion2D').
         doc('input command in rotation and translation. Requires a data connection type.')
 end
 
@@ -78,7 +78,7 @@ task_context "SoftTurnController" do
     property("Tt", "double", -1.0)
 
 
-    input_port('motion_command', 'base/MotionCommand2D').
+    input_port('motion_command', 'base/commands/Motion2D').
         doc('input command in rotation and translation. Requires a data connection type.')
 end
 
