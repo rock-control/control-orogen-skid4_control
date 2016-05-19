@@ -36,6 +36,8 @@ task_context "SimpleController" do
 
     input_port('motion_command', 'base/MotionCommand2D').
         doc('input command in rotation and translation. Requires a data connection type.')
+
+    periodic(0.01)
 end
 
 # A controller that applies constant speed to all 4 wheels
