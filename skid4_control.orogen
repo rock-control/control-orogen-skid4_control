@@ -26,6 +26,9 @@ task_context "SimpleController" do
 
     needs_configuration
 
+    property("timeout", "double",0.1).
+        doc("Timeout in seconds after a stop command is emitted if no new motion commands are available.")
+
     property("wheel_radius", "double").
         doc("the radius of a wheel, in meters")
     property("track_width", "double").
@@ -34,7 +37,7 @@ task_context "SimpleController" do
     property("left_wheel_names", "std::vector<std::string>")
     property("right_wheel_names", "std::vector<std::string>")
 
-    input_port('motion_command', 'base/MotionCommand2D').
+    input_port('motion_command', 'base/commands/Motion2D').
         doc('input command in rotation and translation. Requires a data connection type.')
 
     periodic(0.01)
@@ -50,7 +53,7 @@ task_context "ConstantSpeedController" do
     property("speed", "double", 0.0).
         doc("speed that is applied to the motors")
 
-    input_port('motion_command', 'base/MotionCommand2D').
+    input_port('motion_command', 'base/commands/Motion2D').
         doc('input command in rotation and translation. Requires a data connection type.')
 end
 
@@ -77,7 +80,7 @@ task_context "SoftTurnController" do
     property("Tt", "double", -1.0)
 
 
-    input_port('motion_command', 'base/MotionCommand2D').
+    input_port('motion_command', 'base/commands/Motion2D').
         doc('input command in rotation and translation. Requires a data connection type.')
 end
 
