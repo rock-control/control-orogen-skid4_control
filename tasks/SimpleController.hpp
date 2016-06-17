@@ -14,10 +14,6 @@ namespace skid4_control {
         double m_radius;
         double m_trackWidth;
 
-        std::vector<size_t> m_rightIndexes;
-        std::vector<size_t> m_leftIndexes;
-        
-        base::commands::Joints m_jointCmd;
         
     public:
         /** TaskContext constructor for SimpleController

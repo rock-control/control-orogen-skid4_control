@@ -5,6 +5,7 @@
 
 #include "skid4_control/SoftTurnControllerBase.hpp"
 #include <motor_controller/PID.hpp>
+#include <base/samples/Joints.hpp>
 
 namespace skid4_control {
     class SoftTurnController : public SoftTurnControllerBase
@@ -35,13 +36,15 @@ namespace skid4_control {
         
         motor_controller::PID leftPid;
         motor_controller::PID rightPid;
-        base::actuators::Status lastStatus;
+        base::samples::Joints lastStatus;
 
-	base::actuators::Status startStatus;
+	base::samples::Joints startStatus;
 
-        double leftController(double wantedSpeed, const base::actuators::Status &status);
-        double rightController(double wantedSpeed, const base::actuators::Status &status);
+        double leftController(double wantedSpeed, const base::samples::Joints &status);
+        double rightController(double wantedSpeed, const base::samples::Joints &status);
 
+        double getSpeed(const base::samples::Joints& status, const std::vector< std::string >& joints);
+        
     public:
 	SoftTurnController(std::string const& name = "skid4_control::SoftTurnController");
 

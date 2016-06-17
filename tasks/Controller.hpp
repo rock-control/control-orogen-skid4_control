@@ -4,6 +4,7 @@
 #define SKID4_CONTROL_CONTROLLER_TASK_HPP
 
 #include "skid4_control/ControllerBase.hpp"
+#include <base/commands/Joints.hpp>
 
 namespace skid4_control {
     class Controller : public ControllerBase
@@ -11,13 +12,13 @@ namespace skid4_control {
 	friend class ControllerBase;
 
     protected:
-        base::actuators::Status  m_status;
-        base::actuators::Command  m_cmd;
-	/**
-	 * Set m_cmd to zero and PWM mode.
-	 * also write m_cmd on the simple_command port
-	 **/
-	void stopMotors();
+        std::vector<size_t> m_rightIndexes;
+        std::vector<size_t> m_leftIndexes;
+        
+        std::vector<std::string> m_RightWheelNames;
+        std::vector<std::string> m_LeftWheelNames;
+        
+        base::commands::Joints m_jointCmd;
 
     public:
         Controller(std::string const& name = "skid4_control::Controller", TaskCore::TaskState initial_state = Stopped);
@@ -38,7 +39,7 @@ namespace skid4_control {
          *     ...
          *   end
          */
-        // bool configureHook();
+        bool configureHook();
 
         /** This hook is called by Orocos when the state machine transitions
          * from Stopped to Running. If it returns false, then the component will

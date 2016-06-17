@@ -13,11 +13,8 @@ task_context "Controller" do
     output_port("command", "base/commands/Joints").
         doc("output command for the motor drivers. A data connection type is recommended")
 
-    input_port("status", "base/actuators/Status").
-        doc("motor data")
-
-    output_port("simple_command", "base/actuators/Command").
-        doc("output command for the hbridges. A data connection type is recommended")
+    property("left_wheel_names", "std::vector<std::string>")
+    property("right_wheel_names", "std::vector<std::string>")
 end
 
 # The simplest four-wheel, skid-steering controller you can get
@@ -31,27 +28,10 @@ task_context "SimpleController" do
     property("track_width", "double").
         doc("the distance between the two wheels of the same axis, in meters")
 
-    property("left_wheel_names", "std::vector<std::string>")
-    property("right_wheel_names", "std::vector<std::string>")
-
-    input_port('motion_command', 'base/MotionCommand2D').
+    input_port('motion_command', 'base/commands/Motion2D').
         doc('input command in rotation and translation. Requires a data connection type.')
 
     periodic(0.01)
-end
-
-# A controller that applies constant speed to all 4 wheels
-# It can't turn the robot and is only usefull for datagathering
-task_context "ConstantSpeedController" do
-    subclasses "Controller"
-
-    needs_configuration
-
-    property("speed", "double", 0.0).
-        doc("speed that is applied to the motors")
-
-    input_port('motion_command', 'base/MotionCommand2D').
-        doc('input command in rotation and translation. Requires a data connection type.')
 end
 
 task_context "SoftTurnController" do
@@ -77,7 +57,7 @@ task_context "SoftTurnController" do
     property("Tt", "double", -1.0)
 
 
-    input_port('motion_command', 'base/MotionCommand2D').
+    input_port('motion_command', 'base/commands/Motion2D').
         doc('input command in rotation and translation. Requires a data connection type.')
 end
 

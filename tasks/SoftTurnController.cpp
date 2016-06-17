@@ -2,8 +2,8 @@
 
 #include "SoftTurnController.hpp"
 #include "motor_controller/PID.hpp"
-#include <base/actuators/vehicles.h>
 #include <base/commands/Motion2D.hpp>
+#include <base/commands/Joints.hpp>
 
 using namespace skid4_control;
 
@@ -69,18 +69,36 @@ void currentController(double input)
     
 }
 
+double SoftTurnController::getSpeed( const base::samples::Joints &status, const std::vector< std::string > &joints)
+{
+    double speed = 0;
+    const double timeSinceLastMeasurement = (status.time - lastStatus.time).toMilliseconds();
+    
+    for(std::vector<std::string>::const_iterator it = joints.begin(); it != joints.end();it++)
+    {
+        if(status[*it].hasSpeed())
+        {
+            speed += status[*it].speed;
+        }
+        else
+        {
+            speed += (status[*it].position - lastStatus[*it].position) / timeSinceLastMeasurement;
+        }
+    }
+    
+    speed /= joints.size();
+    
+    return speed;
+}
 
-double SoftTurnController::leftController(double wantedSpeed, const base::actuators::Status &status)
+double SoftTurnController::leftController(double wantedSpeed, const base::samples::Joints &status)
 {    
     static double lastOutput = 0.0;
-    const double timeSinceLastMeasurement = status.index - lastStatus.index * 0.001;
+    const double timeSinceLastMeasurement = (status.time - lastStatus.time).toMilliseconds();
     if(timeSinceLastMeasurement == 0.0)
         return lastOutput;
     
-    const double curSpeed = (status.states[base::actuators::WHEEL4_FRONT_LEFT].positionExtern - status.states[base::actuators::WHEEL4_FRONT_LEFT].positionExtern 
-                            + status.states[base::actuators::WHEEL4_REAR_LEFT].positionExtern - status.states[base::actuators::WHEEL4_REAR_LEFT].positionExtern)
-                            / 2.0 / timeSinceLastMeasurement;
-    
+    const double curSpeed = getSpeed(status, m_LeftWheelNames);
 
     const double output = leftPid.update(curSpeed, wantedSpeed, timeSinceLastMeasurement);
     lastOutput = output;
@@ -88,17 +106,14 @@ double SoftTurnController::leftController(double wantedSpeed, const base::actuat
     return output;
 }
 
-double SoftTurnController::rightController(double wantedSpeed, const base::actuators::Status &status)
+double SoftTurnController::rightController(double wantedSpeed, const base::samples::Joints &status)
 {
     static double lastOutput = 0.0;
-    const double timeSinceLastMeasurement = status.index - lastStatus.index * 0.001;
+    const double timeSinceLastMeasurement = (status.time - lastStatus.time).toMilliseconds();
     if(timeSinceLastMeasurement == 0.0)
         return lastOutput;
     
-    const double curSpeed = (status.states[base::actuators::WHEEL4_FRONT_RIGHT].positionExtern - status.states[base::actuators::WHEEL4_FRONT_RIGHT].positionExtern 
-                            + status.states[base::actuators::WHEEL4_REAR_RIGHT].positionExtern - status.states[base::actuators::WHEEL4_REAR_RIGHT].positionExtern) 
-                            / 2.0 / timeSinceLastMeasurement;
-    
+    const double curSpeed = getSpeed(status, m_RightWheelNames);
 
     const double output = rightPid.update(curSpeed, wantedSpeed, timeSinceLastMeasurement);
     lastOutput = output;
@@ -116,8 +131,8 @@ void SoftTurnController::updateHook()
     static double lastSpeed = 0;
     static base::Time changeTime;
 
-    base::actuators::Status status;
-    if(_status.readNewest(status, true) == RTT::NoData)
+    base::samples::Joints status;
+    if(_status_samples.readNewest(status, true) == RTT::NoData)
 	return;
 
     // This is the user's command
@@ -136,9 +151,9 @@ void SoftTurnController::updateHook()
         cmd_in.rotation = turnSpeed * fabs(cmd_in.rotation) / cmd_in.rotation;
 
 	static bool switchState = false;
-	for(int i = 0; i < 4; i++)
+	for(unsigned int i = 0; i < startStatus.size(); i++)
 	{
-	    const double diff = fabs(startStatus.states[i].positionExtern - status.states[i].positionExtern);
+	    const double diff = fabs(startStatus[i].position - status[i].position);
 	    //we assume zero slip
 	    if(diff * _wheel_radius.get()  > _turnVariance.get() )
 	    {
@@ -205,17 +220,19 @@ void SoftTurnController::updateHook()
     double leftSpeed;
     double rightSpeed;
     
-    m_cmd.mode[0] = m_cmd.mode[1] =
-        m_cmd.mode[2] = m_cmd.mode[3] = base::actuators::DM_SPEED;
-
+    m_jointCmd.time = base::Time::now();
     
-    m_cmd.target[base::actuators::WHEEL4_FRONT_LEFT]  = fwd_velocity - differential;
-    m_cmd.target[base::actuators::WHEEL4_REAR_LEFT]   = fwd_velocity - differential;
-    m_cmd.target[base::actuators::WHEEL4_FRONT_RIGHT] = fwd_velocity + differential;
-    m_cmd.target[base::actuators::WHEEL4_REAR_RIGHT]  = fwd_velocity + differential;
-    m_cmd.time = base::Time::now();
+    for(std::vector<size_t>::const_iterator it = m_rightIndexes.begin(); it != m_rightIndexes.end();it++)
+    {
+        m_jointCmd[*it].speed = fwd_velocity + differential;
+    }
 
-    _simple_command.write(m_cmd);
+    for(std::vector<size_t>::const_iterator it = m_leftIndexes.begin(); it != m_leftIndexes.end();it++)
+    {
+        m_jointCmd[*it].speed = fwd_velocity + differential;
+    }
+
+    _command.write(m_jointCmd);
 }
 // void SoftTurnController::errorHook()
 // {
