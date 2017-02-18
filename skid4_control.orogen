@@ -27,6 +27,9 @@ task_context "SimpleController" do
         doc("the radius of a wheel, in meters")
     property("track_width", "double").
         doc("the distance between the two wheels of the same axis, in meters")
+    # If no new input commands are received for this time the task stops to write output commands.
+    # Default is 0.1 seconds.
+    property("cmd_timeout", "base/Time")
 
     input_port('motion_command', 'base/commands/Motion2D').
         doc('input command in rotation and translation. Requires a data connection type.')

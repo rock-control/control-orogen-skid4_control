@@ -5,6 +5,7 @@
 
 #include "skid4_control/SimpleControllerBase.hpp"
 #include <base/commands/Joints.hpp>
+#include <base/Timeout.hpp>
 
 namespace skid4_control {
     class SimpleController : public SimpleControllerBase
@@ -13,8 +14,8 @@ namespace skid4_control {
 
         double m_radius;
         double m_trackWidth;
+        base::Timeout m_cmd_timeout;
 
-        
     public:
         /** TaskContext constructor for SimpleController
          * \param name Name of the task. This name needs to be unique to make it identifiable via nameservices.
