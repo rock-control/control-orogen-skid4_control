@@ -34,6 +34,8 @@ task_context "SimpleController" do
     input_port('motion_command', 'base/commands/Motion2D').
         doc('input command in rotation and translation. Requires a data connection type.')
 
+    output_port("status_samples_debug", "base/samples/Joints")
+
     periodic(0.01)
 end
 
@@ -63,5 +65,3 @@ task_context "SoftTurnController" do
     input_port('motion_command', 'base/commands/Motion2D').
         doc('input command in rotation and translation. Requires a data connection type.')
 end
-
-

@@ -15,6 +15,7 @@ namespace skid4_control {
         double m_radius;
         double m_trackRadius;
         base::Timeout m_cmd_timeout;
+        base::samples::Joints joint_status;
 
     public:
         /** TaskContext constructor for SimpleController
@@ -23,13 +24,13 @@ namespace skid4_control {
          */
         SimpleController(std::string const& name = "skid4_control::SimpleController");
 
-        /** TaskContext constructor for SimpleController 
-         * \param name Name of the task. This name needs to be unique to make it identifiable for nameservices. 
-         * \param engine The RTT Execution engine to be used for this task, which serialises the execution of all commands, programs, state machines and incoming events for a task. 
-         * 
+        /** TaskContext constructor for SimpleController
+         * \param name Name of the task. This name needs to be unique to make it identifiable for nameservices.
+         * \param engine The RTT Execution engine to be used for this task, which serialises the execution of all commands, programs, state machines and incoming events for a task.
+         *
          */
         SimpleController(std::string const& name, RTT::ExecutionEngine* engine);
-        
+
         /** This hook is called by Orocos when the state machine transitions
          * from PreOperational to Stopped. If it returns false, then the
          * component will stay in PreOperational. Otherwise, it goes into
@@ -58,7 +59,7 @@ namespace skid4_control {
          *
          * The error(), exception() and fatal() calls, when called in this hook,
          * allow to get into the associated RunTimeError, Exception and
-         * FatalError states. 
+         * FatalError states.
          *
          * In the first case, updateHook() is still called, and recover() allows
          * you to go back into the Running state.  In the second case, the
@@ -90,4 +91,3 @@ namespace skid4_control {
 }
 
 #endif
-
