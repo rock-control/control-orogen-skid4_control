@@ -15,6 +15,8 @@ task_context "Controller" do
 
     property("left_wheel_names", "std::vector<std::string>")
     property("right_wheel_names", "std::vector<std::string>")
+    property("max_torque", "float", -1).
+        doc('Maximum allowed torque of the wheels. Value < zero means no limit')
 end
 
 # The simplest four-wheel, skid-steering controller you can get
@@ -27,6 +29,7 @@ task_context "SimpleController" do
         doc("the radius of a wheel, in meters")
     property("track_width", "double").
         doc("the distance between the two wheels of the same axis, in meters")
+
     # If no new input commands are received for this time the task stops to write output commands.
     # Default is 0.1 seconds.
     property("cmd_timeout", "base/Time")

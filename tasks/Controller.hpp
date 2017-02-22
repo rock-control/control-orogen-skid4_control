@@ -20,6 +20,8 @@ namespace skid4_control {
         
         base::commands::Joints m_jointCmd;
 
+        float maxTorque;
+        
     public:
         Controller(std::string const& name = "skid4_control::Controller", TaskCore::TaskState initial_state = Stopped);
         Controller(std::string const& name, RTT::ExecutionEngine* engine, TaskCore::TaskState initial_state = Stopped);

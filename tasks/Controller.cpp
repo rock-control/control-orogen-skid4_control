@@ -49,6 +49,10 @@ bool Controller::configureHook()
         curIndex++;        
     }
 
+    maxTorque = _max_torque.get();
+    
+    if(maxTorque < 0)
+        maxTorque = base::unset<float>();
     
     return true;
 }

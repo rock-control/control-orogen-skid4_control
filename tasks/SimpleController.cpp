@@ -124,18 +124,22 @@ void SimpleController::updateHook()
 
     for(std::vector<size_t>::const_iterator it = m_leftIndexes.begin(); it != m_leftIndexes.end();it++)
     {
-        m_jointCmd.elements[*it].speed = fwd_velocity - differential;
+        base::JointState &s(m_jointCmd.elements[*it]);
+        s.speed = fwd_velocity - differential;
+        s.effort = maxTorque;
         if(min_speed_left_idx >= 0 && *it != min_speed_left_idx)
         {
-            m_jointCmd.elements[*it].speed = std::copysign(min_speed_left, m_jointCmd.elements[*it].speed);
+            s.speed = std::copysign(min_speed_left, s.speed);
         }
     }
     for(std::vector<size_t>::const_iterator it = m_rightIndexes.begin(); it != m_rightIndexes.end();it++)
     {
-        m_jointCmd.elements[*it].speed = fwd_velocity + differential;
+        base::JointState &s(m_jointCmd.elements[*it]);
+        s.speed = fwd_velocity + differential;
+        s.effort = maxTorque;
         if(min_speed_right_idx >= 0 && *it != min_speed_right_idx)
         {
-            m_jointCmd.elements[*it].speed = std::copysign(min_speed_right, m_jointCmd.elements[*it].speed);
+            s.speed = std::copysign(min_speed_right, s.speed);
         }
     }
 
