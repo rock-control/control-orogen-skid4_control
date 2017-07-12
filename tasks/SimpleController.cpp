@@ -51,7 +51,10 @@ void SimpleController::updateHook()
     else if(status == RTT::NewData)
         m_cmd_timeout.restart();
     else if(status == RTT::OldData && m_cmd_timeout.elapsed()) // check for input timeout
-        return;
+    {
+        cmd_in.translation = 0;
+        cmd_in.rotation    = 0;
+    }
 
     base::samples::Joints joint_status_in;
     RTT::FlowStatus joint_status_fstatus = _status_samples.readNewest(joint_status_in);
@@ -62,23 +65,35 @@ void SimpleController::updateHook()
     }
     else if(joint_status_fstatus == RTT::NewData)
     {
-        for(size_t i = 0; i < joint_status_in.size(); ++i)
-        {
-            joint_status.names[i] = joint_status_in.names[i];
-            if(!base::isUnset(joint_status_in.elements[i].speed))
-            {
-                joint_status.elements[i].speed = joint_status_in.elements[i].speed;
-            }
-            else if(!base::isUnset(joint_status_in.elements[i].position))
-            {
-                if(!base::isUnset(joint_status.elements[i].position))
-                {
-                    joint_status.elements[i].speed = (joint_status_in.elements[i].position - joint_status.elements[i].position) / (joint_status_in.time - joint_status.time).toSeconds();
-                }
-                joint_status.elements[i].position = joint_status_in.elements[i].position;
-            }
-        }
-        joint_status.time = joint_status_in.time;
+        double delta_t = (joint_status_in.time - joint_status.time).toSeconds();
+	if(delta_t > 0.05)
+	{
+		for(size_t i = 0; i < joint_status_in.size(); i++)
+		{
+		    joint_status.names[i] = joint_status_in.names[i];
+		    if(!base::isUnset(joint_status_in.elements[i].speed))
+		    {
+		        joint_status.elements[i].speed = joint_status_in.elements[i].speed;
+		    }
+		    else if(!base::isUnset(joint_status_in.elements[i].position))
+		    {
+
+		        if(!base::isUnset(joint_status.elements[i].position))
+		        {
+			    if(delta_t > 1.e-6)
+		            	joint_status.elements[i].speed = (joint_status_in.elements[i].position - joint_status.elements[i].position) / delta_t;
+		            else
+				joint_status.elements[i].speed = 0.f;
+		        }
+		        joint_status.elements[i].position = joint_status_in.elements[i].position;
+		    }
+		    joint_status.elements[i].effort = joint_status_in.elements[i].effort;
+		    joint_status.elements[i].raw = joint_status_in.elements[i].raw;
+	 	    joint_status.elements[i].acceleration = std::abs(joint_status_in.elements[i].raw * 32.0 * joint_status.elements[i].effort * 0.001);
+		    
+		}
+		joint_status.time = joint_status_in.time;
+	}
         _status_samples_debug.write(joint_status);
     }
 
@@ -86,12 +101,12 @@ void SimpleController::updateHook()
     size_t min_speed_right_idx = -1;
     float min_speed_left = std::numeric_limits< float >::max();
     size_t min_speed_left_idx = -1;
-    for(size_t i = 0; i < m_LeftWheelNames.size(); ++i)
+    for(size_t i = 0; i < m_LeftWheelNames.size(); i++)
     {
         try
         {
-            float speed = std::abs(joint_status[m_LeftWheelNames[i]].speed);
-            if(!base::isNaN(speed) && speed < min_speed_left);
+            float speed = std::abs(joint_status.getElementByName(m_LeftWheelNames[i]).speed);
+            if(!base::isNaN(speed)) // && speed < min_speed_left)
             {
                 min_speed_left_idx = m_leftIndexes[i];
                 min_speed_left = speed;
@@ -99,15 +114,15 @@ void SimpleController::updateHook()
         }
         catch(const base::samples::Joints::InvalidName& e)
         {
-            RTT::log(RTT::Debug) << e.what() << RTT::endlog();
+            RTT::log(RTT::Error) << e.what() << RTT::endlog();
         }
     }
-    for(size_t i = 0; i < m_RightWheelNames.size(); ++i)
+    for(size_t i = 0; i < m_RightWheelNames.size(); i++)
     {
         try
         {
-            float speed = std::abs(joint_status[m_RightWheelNames[i]].speed);
-            if(!base::isNaN(speed) && speed < min_speed_right);
+            float speed = std::abs(joint_status.getElementByName(m_RightWheelNames[i]).speed);
+            if(!base::isNaN(speed)) // && speed < min_speed_right)
             {
                 min_speed_right_idx = m_rightIndexes[i];
                 min_speed_right = speed;
@@ -115,7 +130,7 @@ void SimpleController::updateHook()
         }
         catch(const base::samples::Joints::InvalidName& e)
         {
-            RTT::log(RTT::Debug) << e.what() << RTT::endlog();
+            RTT::log(RTT::Error) << e.what() << RTT::endlog();
         }
     }
 
@@ -127,9 +142,13 @@ void SimpleController::updateHook()
         base::JointState &s(m_jointCmd.elements[*it]);
         s.speed = fwd_velocity - differential;
         s.effort = maxTorque;
-        if(min_speed_left_idx >= 0 && *it != min_speed_left_idx)
+        if(std::abs(min_speed_left) < std::abs(s.speed) && min_speed_left_idx >= 0 && *it != min_speed_left_idx)
         {
-            s.speed = std::copysign(min_speed_left, s.speed);
+            float new_speed = std::copysign(min_speed_left, s.speed);
+	    if(std::abs(new_speed) < std::abs(s.speed) * 0.2)
+		s.speed = s.speed * 0.2;
+	    else
+		s.speed = new_speed;
         }
     }
     for(std::vector<size_t>::const_iterator it = m_rightIndexes.begin(); it != m_rightIndexes.end();it++)
@@ -137,9 +156,13 @@ void SimpleController::updateHook()
         base::JointState &s(m_jointCmd.elements[*it]);
         s.speed = fwd_velocity + differential;
         s.effort = maxTorque;
-        if(min_speed_right_idx >= 0 && *it != min_speed_right_idx)
+        if(std::abs(min_speed_right) < std::abs(s.speed) && min_speed_right_idx >= 0 && *it != min_speed_right_idx)
         {
-            s.speed = std::copysign(min_speed_right, s.speed);
+            float new_speed = std::copysign(min_speed_right, s.speed);
+	    if(std::abs(new_speed) < std::abs(s.speed) * 0.2)
+		s.speed = s.speed * 0.2;
+	    else
+		s.speed = new_speed;
         }
     }
 
