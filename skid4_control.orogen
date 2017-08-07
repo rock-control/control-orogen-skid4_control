@@ -37,6 +37,27 @@ task_context "SimpleController" do
     periodic(0.01)
 end
 
+# The simplest four-wheel, skid-steering controller you can get
+task_context "FourWheelController" do
+    subclasses "Controller"
+
+    needs_configuration
+
+    property("wheel_radius", "double").
+        doc("the radius of a wheel, in meters")
+    property("track_width", "double").
+        doc("the distance between the two wheels of the same axis, in meters")
+    property("axis_distance", "double").
+        doc("the distance between the two axis of the robot, in meters")
+    # If no new input commands are received for this time the task stops to write output commands.
+    # Default is 0.1 seconds.
+    property("cmd_timeout", "base/Time")
+
+    input_port('motion_command', 'base/commands/Motion2D').
+        doc('input command in rotation and translation. Requires a data connection type.')
+
+    periodic(0.01)
+end
 task_context "SoftTurnController" do
     subclasses "Controller"
 
