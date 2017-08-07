@@ -77,13 +77,15 @@ void FourWheelController::updateHook()
     {
         double radius = cmd_in.translation / cmd_in.rotation;
     
-        double radiusLeft = Eigen::Vector2d(radius - m_axisDist / 2.0, m_trackWidth / 2.0).norm();
-        double radiusRight = Eigen::Vector2d(radius + m_axisDist / 2.0, m_trackWidth / 2.0).norm();
+//        double radiusLeft  = Eigen::Vector2d(radius - m_axisDist / 2.0, m_trackWidth / 2.0).norm();
+//        double radiusRight = Eigen::Vector2d(radius + m_axisDist / 2.0, m_trackWidth / 2.0).norm();
+        double radiusLeft  = radius - m_trackWidth / 2.0;
+        double radiusRight = radius + m_trackWidth / 2.0;
 
         //compute how many radian we need to travel on the main
         //circle in one second
-        // 1s * cmd_in.translation / (radius * 2*M_PI) / (2*M_PI)
-        double angle = cmd_in.translation / radius;
+        // 1s * cmd_in.translation / radius == cmd_in.rotation
+        double angle = cmd_in.rotation;
         
         distLeft = angle * radiusLeft;
         distRight = angle * radiusRight;
