@@ -13,7 +13,7 @@ namespace skid4_control {
 	friend class SimpleControllerBase;
 
         double m_radius;
-        double m_trackWidth;
+        double m_trackRadius;
         base::Timeout m_cmd_timeout;
 
     public:
