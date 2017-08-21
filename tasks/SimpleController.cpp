@@ -24,9 +24,9 @@ bool SimpleController::configureHook()
         return false;
 
     m_radius = _wheel_radius.get();
-    m_trackWidth = _track_width.get();
+    m_trackRadius = _track_width.get() / 2;
     m_cmd_timeout = base::Timeout(_cmd_timeout.value());
-    if (m_radius <= 0 || m_trackWidth <= 0)
+    if (m_radius <= 0 || m_trackRadius <= 0)
     {
         RTT::log(RTT::Error) << "wrong radius and/or track_width parameters" << RTT::endlog();
         return false;
@@ -53,7 +53,7 @@ void SimpleController::updateHook()
         return;
 
     double fwd_velocity = cmd_in.translation / m_radius;
-    double differential = cmd_in.rotation * m_trackWidth / m_radius;
+    double differential = cmd_in.rotation * m_trackRadius / m_radius;
 
     for(std::vector<size_t>::const_iterator it = m_leftIndexes.begin(); it != m_leftIndexes.end();it++)
     {
