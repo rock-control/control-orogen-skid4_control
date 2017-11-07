@@ -3,6 +3,7 @@ version "0.1"
 
 using_library 'motor_controller'
 import_types_from "base"
+import_types_from "transformer"
 
 task_context "Controller" do
     abstract
@@ -39,6 +40,32 @@ task_context "SimpleController" do
 
     output_port("status_samples_debug", "base/samples/Joints")
 
+    periodic(0.01)
+end
+
+# The simplest four-wheel, skid-steering controller you can get
+task_context "SafeController" do
+    subclasses "Controller"
+
+    needs_configuration
+
+    property("wheel_radius", "double").
+        doc("the radius of a wheel, in meters")
+    property("track_width", "double").
+        doc("the distance between the two wheels of the same axis, in meters")
+    # If no new input commands are received for this time the task stops to write output commands.
+    # Default is 0.1 seconds.
+    property("cmd_timeout", "base/Time")
+
+    input_port('motion_command', 'base/commands/Motion2D').
+        doc('input command in rotation and translation. Requires a data connection type.')
+
+    transformer do
+	transform "body", "imu"
+	max_latency 0.2
+    end
+
+        
     periodic(0.01)
 end
 

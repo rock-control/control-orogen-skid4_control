@@ -10,6 +10,7 @@
     <license>GPL v2 or later</license>
 
     <depend package="control/motor_controller"/>
+    <depend package="drivers/orogen/transformer"/>
     <depend package="base/types"/>
     <depend package="orogen"/>
   <tags>stable</tags>
