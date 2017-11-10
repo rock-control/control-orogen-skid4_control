@@ -36,7 +36,15 @@ namespace skid4_control{
 	Eigen::Quaterniond body2Gravity;
 	
 	bool gotBody2Gravity;
-	
+        base::samples::Joints joint_status;
+
+        size_t frontLeftIdx;
+        size_t frontRightIdx;
+        size_t rearLeftIdx;
+        size_t rearRightIdx;
+        
+        void synchronizeSpeeds(std::size_t mainwheelIdx, double wantedSpeed, const std::vector< size_t >& allWheelIdx);
+
     public:
         /** TaskContext constructor for SafeController
          * \param name Name of the task. This name needs to be unique to make it identifiable via nameservices.

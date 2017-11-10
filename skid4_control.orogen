@@ -57,6 +57,14 @@ task_context "SafeController" do
     # Default is 0.1 seconds.
     property("cmd_timeout", "base/Time")
 
+    property("front_left_name", "std::string")
+    property("front_right_name", "std::string")
+    property("rear_left_name", "std::string")
+    property("rear_right_name", "std::string")
+
+    property("minLowerWheelTorque", "double", 0)
+    property("lowTorquePitchLimit", "double", 0)
+    
     input_port('motion_command', 'base/commands/Motion2D').
         doc('input command in rotation and translation. Requires a data connection type.')
 
