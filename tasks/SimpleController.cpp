@@ -36,9 +36,9 @@ bool SimpleController::configureHook()
     return true;
 }
 
-void SimpleController::synchronizeSpeeds(const std::string &mainWheel, size_t mainwheelIdx, double wantedSpeed, const std::vector<size_t> &allWheelIdx)
+void SimpleController::synchronizeSpeeds(size_t mainwheelIdx, double wantedSpeed, const std::vector<size_t> &allWheelIdx)
 {
-    float min_speed = std::abs(joint_status.getElementByName(mainWheel).speed);
+    float min_speed = std::abs(joint_status.getElementByName(m_jointCmd.names[mainwheelIdx]).speed);
 
     for(std::vector<size_t>::const_iterator it = allWheelIdx.begin(); it != allWheelIdx.end();it++)
     {
@@ -99,8 +99,8 @@ void SimpleController::updateHook()
     double differential = cmd_in.rotation * m_trackRadius / m_radius;
 
     //the 1 is a big HACK we assume the rear wheel ist last in the name vector
-    synchronizeSpeeds(m_LeftWheelNames[1], m_leftIndexes[1], fwd_velocity - differential, m_leftIndexes);
-    synchronizeSpeeds(m_RightWheelNames[1], m_rightIndexes[1], fwd_velocity + differential, m_rightIndexes);
+    synchronizeSpeeds(m_leftIndexes[1], fwd_velocity - differential, m_leftIndexes);
+    synchronizeSpeeds(m_rightIndexes[1], fwd_velocity + differential, m_rightIndexes);
 
     m_jointCmd.time = base::Time::now();
 

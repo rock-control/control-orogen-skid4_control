@@ -17,7 +17,7 @@ namespace skid4_control {
         base::Timeout m_cmd_timeout;
         base::samples::Joints joint_status;
 
-        void synchronizeSpeeds(const std::__cxx11::string& mainWheel, std::size_t mainwheelIdx, double wantedSpeed, const std::vector<size_t> &allWheelIdx);
+        void synchronizeSpeeds(std::size_t mainwheelIdx, double wantedSpeed, const std::vector<size_t> &allWheelIdx);
         
     public:
         /** TaskContext constructor for SimpleController
