@@ -17,6 +17,8 @@ namespace skid4_control {
         base::Timeout m_cmd_timeout;
         base::samples::Joints joint_status;
 
+        void synchronizeSpeeds(const std::__cxx11::string& mainWheel, std::size_t mainwheelIdx, double wantedSpeed, const std::vector<size_t> &allWheelIdx);
+        
     public:
         /** TaskContext constructor for SimpleController
          * \param name Name of the task. This name needs to be unique to make it identifiable via nameservices.
