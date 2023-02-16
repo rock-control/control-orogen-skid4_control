@@ -40,9 +40,6 @@ bool SafeController::configureHook()
         return false;
     }
     joint_status.resize(m_jointCmd.size());
-    
-    m_jointCmd.getElementByName(_front_left_name.get());
-    
     frontLeftIdx = m_jointCmd.mapNameToIndex(_front_left_name.get());
     frontRightIdx = m_jointCmd.mapNameToIndex(_front_right_name.get());
     rearLeftIdx = m_jointCmd.mapNameToIndex(_rear_left_name.get());
@@ -99,7 +96,7 @@ void SafeController::synchronizeSpeeds(size_t mainwheelIdx, double wantedSpeed, 
 
 void SafeController::updateHook()
 {
-    SafeController::updateHook();
+    SafeControllerBase::updateHook();
 
     // This is the user's command
     base::commands::Motion2D cmd_in;
@@ -128,7 +125,7 @@ void SafeController::updateHook()
     double differential = cmd_in.rotation * m_trackRadius / m_radius;
 
     double bodyPitch = base::getPitch(body2Gravity);
-    
+
     double minLowerWheelTorque = _minLowerWheelTorque.get();
     double lowTorquePitchLimit = _lowTorquePitchLimit.get();
 
@@ -136,10 +133,10 @@ void SafeController::updateHook()
     
     if(fabs(bodyPitch) < lowTorquePitchLimit)
     {
-        lowerWheelTorque = minLowerWheelTorque + (_max_torque.get() - minLowerWheelTorque) * fabs(bodyPitch) / lowTorquePitchLimit;
+        lowerWheelTorque = minLowerWheelTorque + (_max_torque.get() - minLowerWheelTorque) *  (lowTorquePitchLimit - fabs(bodyPitch)) / lowTorquePitchLimit;
     }    
     
-    if(bodyPitch > 0)
+    if(bodyPitch < 0)
     {
         //if we drive upwards, the rear wheels are the master wheels
         synchronizeSpeeds(rearLeftIdx, fwd_velocity - differential, m_leftIndexes);
